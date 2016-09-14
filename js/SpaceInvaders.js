@@ -5,7 +5,8 @@ var Container = PIXI.Container,
     resources = PIXI.loader.resources,
     Sprite = PIXI.Sprite,
     TextureCache = PIXI.utils.TextureCache,
-    Container = PIXI.Container;
+    Container = PIXI.Container,
+    hitTestRectangle = utils.hitTestRectangle;
 
 //
 var renderer = new autoDetectRenderer(256, 256);
