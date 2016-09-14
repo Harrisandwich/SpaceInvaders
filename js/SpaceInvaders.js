@@ -6,7 +6,8 @@ var Container = PIXI.Container,
     Sprite = PIXI.Sprite,
     TextureCache = PIXI.utils.TextureCache,
     Container = PIXI.Container,
-    hitTestRectangle = utils.hitTestRectangle;
+    hitTestRectangle = utils.hitTestRectangle,
+    keyboard = utils.keyboard;
 
 
 var renderer = new autoDetectRenderer(256, 256);
@@ -19,13 +20,19 @@ var playerProjectiles = [];
 var enemyProjectiles = [];
 var player = null;
 
+var leftKey = keyboard(37);
+var rightKey = keyboard(39);
+var spaceKey = keyboard(32);
+
 function resetGame()
 {
     /*
         - create player
         - create enemies
         - create bunkers 
+        - assign keys
     */
+
 }
 function gameLoop()
 {
@@ -87,6 +94,7 @@ function animateProjectiles()
     */
 }
 
+function 
 $(document).ready(function(){
 
     document.body.appendChild(renderer.view);
