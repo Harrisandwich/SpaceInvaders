@@ -20,15 +20,23 @@ var playerProjectiles = [];
 var enemyProjectiles = [];
 var player = null;
 
+var leftKey = keyboard(37);
+var rightKey = keyboard(39);
+var spaceKey = keyboard(32);
 
 loader.add("/image").load(resetGame);
 
 function setup() {
-    loader.resources["images"].texture
+    
+
+    leftKey.press = movePlayer(-1);
+    rightKey.press() = movePlayer(1);
+    spaceKey.press() = playerFire();
+
+    leftKey.release = stopPlayerMovement();
+    rightKey.release = stopPlayerMovement();
+
 }
-var leftKey = keyboard(37);
-var rightKey = keyboard(39);
-var spaceKey = keyboard(32);
 
 function resetGame()
 {
@@ -103,6 +111,15 @@ function animateProjectiles()
     */
 }
 
+function movePlayer(dir)
+{
+    player.vx = dir;
+}
+
+function stopPlayerMovement()
+{
+    
+}
 
 $(document).ready(function(){
 
