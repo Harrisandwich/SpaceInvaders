@@ -19,14 +19,23 @@ var playerProjectiles = [];
 var enemyProjectiles = [];
 var player = null;
 
+loader.add("/image").load(resetGame);
+
+function setup() {
+    loader.resources["images"].texture
+}
+
 function resetGame()
 {
+
+
     /*
         - create player
         - create enemies
         - create bunkers 
     */
 }
+
 function gameLoop()
 {
     requestAnimationFrame(gameLoop);
@@ -86,6 +95,7 @@ function animateProjectiles()
         - move enemies projectiles down
     */
 }
+
 
 $(document).ready(function(){
 
