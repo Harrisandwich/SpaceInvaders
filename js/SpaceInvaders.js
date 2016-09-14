@@ -14,7 +14,11 @@ var stage = new Container();
 var state = null;
 
 var enemies = [];
+var bunkers = [];
+var playerProjectiles = [];
+var enemyProjectiles = [];
 var player = null;
+
 
 function gameLoop()
 {
