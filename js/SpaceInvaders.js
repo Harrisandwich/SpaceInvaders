@@ -1,16 +1,4 @@
-var Enemy = function(frameOneTexture,frameTwoTexture)
-{
-    var self = this;
-    var frames = [frameOneTexture,frameTwoTexture]
-    self.sprite = new Sprite(frameOneTexture);
-    self.animate = function()
-    {
-        //move alien
-        //change frames every movement 
-    }
 
-    
-}
 
 //pixi aliases
 var Container = PIXI.Container,
@@ -23,6 +11,44 @@ var Container = PIXI.Container,
     hitTestRectangle = utils.hitTestRectangle,
     keyboard = utils.keyboard;
 
+var Enemy = function(frameOneTexture,frameTwoTexture)
+{
+    var self = this;
+    var frames = [new Sprite(frameOneTexture),new Sprite(frameTwoTexture)];
+    var dir = 8;
+    self.sprite = new Container();
+    self.sprite.addChild(frames[0],frames[1]);
+    frames[1].visible = false;
+    self.animate = function()
+    {
+
+        self.sprite.x += dir;
+        for(var f in frames)
+        {
+            if(frames[f].visible)
+            {
+                frames[f].visible = false;
+            }
+            else
+            {
+                frames[f].visible = true;
+            }
+        }
+    };
+
+    self.drop = function()
+    {
+        self.sprite.y += self.sprite.vy;
+    }
+
+    self.setDir = function(d)
+    {
+        dir = d;
+    };
+
+
+    
+}
 
 var renderer = new autoDetectRenderer(window.innerWidth, window.innerHeight);
 var stage = new Container();
@@ -39,6 +65,8 @@ var enemyTextures = [];
 var player = null;
 var leftPressed = false;
 var rightPressed = false;
+var enemyTimerStarted = false;
+var enemyTimer = null;
 var direction = 0;
 
 var left = keyboard(37),
@@ -50,6 +78,7 @@ var left = keyboard(37),
 
 //Numbers
 var NUMBER_OF_ENEMIES = 15;
+var ENEMY_BASE_SPEED_MS = 1000;
 var ENEMY_ROOT_POS = {
     x: 0,
     y: 0,
@@ -57,8 +86,8 @@ var ENEMY_ROOT_POS = {
 var ENEMY_PADDING = 20;
 var ROW_PADDING = 50;
 var SIZE_OF_ROW = 5;
-var currentWave = 0;
-var alienSpeed = 1;
+var currentWave = 1;
+var enemySpeed = ENEMY_BASE_SPEED_MS;
 
 
 function setup() {
@@ -101,7 +130,7 @@ function setup() {
         }
     }
     renderer.render(stage);
-       
+    
     gameLoop();
 }
 
@@ -127,7 +156,7 @@ function changeLevel()
 
 function initAliens(wave)
 {
-    alienSpeed += wave;
+    enemySpeed = ENEMY_BASE_SPEED_MS/wave;
     
     for(var i = 0; i < NUMBER_OF_ENEMIES/SIZE_OF_ROW; i++)
     {
@@ -141,6 +170,7 @@ function initAliens(wave)
             //set positon to: y = start_pos * height * row, x = start_pos * width * col
             newEnemy.sprite.x = ((ENEMY_ROOT_POS.x + newEnemy.sprite.width) * r) + ENEMY_PADDING;
             newEnemy.sprite.y = ((ENEMY_ROOT_POS.y + newEnemy.sprite.height) * i) + ROW_PADDING;
+            newEnemy.sprite.vy = newEnemy.sprite.height + ROW_PADDING;
             row.enemies.push(newEnemy);
         }
         enemyRows.push(row);
@@ -154,12 +184,40 @@ function gameLoop()
 {
     requestAnimationFrame(gameLoop);
 
-    if (leftPressed || rightPressed){movePlayer(direction);}
-
+    animate();
     state();
 
     renderer.render(stage);
     
+}
+
+function animate()
+{
+    animatePlayer();
+    animateEnemies();
+}
+
+function animatePlayer()
+{
+    if (leftPressed || rightPressed){movePlayer(direction);}
+}
+
+function animateEnemies()
+{
+    if(!enemyTimerStarted)
+    {
+        enemyTimerStarted = true;
+        enemyTimer = setInterval(function()
+        {
+            for(var r in enemyRows)
+            {
+                for(var e in enemyRows[r].enemies)
+                {
+                    enemyRows[r].enemies[e].animate();
+                }
+            }
+        },enemySpeed);
+    }
 }
 
 function play() {
@@ -173,45 +231,7 @@ function play() {
     
 }
 
-function mainMenu() { 
-    /*
-        - player can click play
-        - thats all (lol)
-    */
-        
-}
 
-function animate()
-{
-
-    //animation functions for each animated sprite 
-    animatePlayer();
-    animateEnemies();
-    animateProjectiles();
-}
-
-function animatePlayer()
-{
-    /*
-        - player movement based on current velocity (vx,vy)
-    */
-}
-
-function animateEnemies()
-{
-    /*
-        - Move enemies based on velocity
-        - if enemy vy > then current velocity, move enemies once then reset vy to 0
-    */
-}
-
-function animateProjectiles()
-{
-    /*
-        - move player projectiles up
-        - move enemies projectiles down
-    */
-}
 
 function movePlayer(dir)
 {
