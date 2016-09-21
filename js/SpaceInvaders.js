@@ -14,11 +14,16 @@ var renderer = new autoDetectRenderer(window.innerWidth, window.innerHeight);
 var stage = new Container();
 var state = play;
 
+var movementSpeed = 3;
+
 var enemies = [];
 var bunkers = [];
 var playerProjectiles = [];
 var enemyProjectiles = [];
 var player = null;
+var leftPressed = false;
+var rightPressed = false;
+var direction = 0;
 
 var left = keyboard(37),
       up = keyboard(38),
@@ -60,26 +65,23 @@ function setup() {
     stage.addChild(alien3_1);
     stage.addChild(player);
     
-     //Left arrow key `press` method
+     //Left
     left.press = function() {
-        console.log("left pressed");
+        direction = -movementSpeed;
+        leftPressed = true;
     };
-
-    //Left arrow key `release` method
-    left.release = function() {
-        console.log("left released");
-    };
+    left.release = function() {leftPressed = false;};
 
     //Right
     right.press = function() {
-        console.log("right pressed");
+        rightPressed = true;
+        direction = movementSpeed;
     };
-    right.release = function() {
-       console.log("right released");
-    };
-    
+    right.release = function() {rightPressed = false;};
     
     renderer.render(stage);
+       
+    gameLoop();
 }
 
 function resetGame()
@@ -99,9 +101,12 @@ function gameLoop()
 {
     requestAnimationFrame(gameLoop);
 
+    if (leftPressed || rightPressed){movePlayer(direction);}
+
     state();
 
     renderer.render(stage);
+    
 }
 
 function play() {
@@ -158,6 +163,7 @@ function animateProjectiles()
 function movePlayer(dir)
 {
     player.vx = dir;
+    player.x += player.vx;
 }
 
 function stopPlayerMovement()
@@ -189,7 +195,6 @@ $(document).ready(function(){
     
     document.body.appendChild(renderer.view);
     
-    
-    gameLoop();
+
     
 });
