@@ -1,3 +1,17 @@
+var Enemy = function(frameOneTexture,frameTwoTexture)
+{
+    var self = this;
+    var frames = [frameOneTexture,frameTwoTexture]
+    self.sprite = new Sprite(frameOneTexture);
+    self.animate = function()
+    {
+        //move alien
+        //change frames every movement 
+    }
+
+    
+}
+
 //pixi aliases
 var Container = PIXI.Container,
     autoDetectRenderer = PIXI.autoDetectRenderer,
@@ -14,12 +28,14 @@ var renderer = new autoDetectRenderer(window.innerWidth, window.innerHeight);
 var stage = new Container();
 var state = play;
 
-var movementSpeed = 3;
 
-var enemies = [];
+var movementSpeed = 3;
+var enemyRows = [];
+
 var bunkers = [];
 var playerProjectiles = [];
 var enemyProjectiles = [];
+var enemyTextures = [];
 var player = null;
 var leftPressed = false;
 var rightPressed = false;
@@ -32,38 +48,33 @@ var left = keyboard(37),
 
 //loader.add("/images").load(resetGame);
 
+//Numbers
+var NUMBER_OF_ENEMIES = 15;
+var ENEMY_ROOT_POS = {
+    x: 0,
+    y: 0,
+}
+var ENEMY_PADDING = 20;
+var ROW_PADDING = 50;
+var SIZE_OF_ROW = 5;
+var currentWave = 0;
+var alienSpeed = 1;
+
+
 function setup() {
     
     
-    var alien1_0 = new PIXI.Sprite(PIXI.loader.resources["images/alien1_0.png"].texture);
-    var alien1_1 = new PIXI.Sprite(PIXI.loader.resources["images/alien1_1.png"].texture);
-    var alien2_0 = new PIXI.Sprite(PIXI.loader.resources["images/alien2_0.png"].texture);
-    var alien2_1 = new PIXI.Sprite(PIXI.loader.resources["images/alien2_1.png"].texture);
-    var alien3_0 = new PIXI.Sprite(PIXI.loader.resources["images/alien3_0.png"].texture);
-    var alien3_1 = new PIXI.Sprite(PIXI.loader.resources["images/alien3_1.png"].texture);
+    enemyTextures.push({frames: [PIXI.loader.resources["images/alien1_0.png"].texture, PIXI.loader.resources["images/alien1_1.png"].texture]});
+    enemyTextures.push({frames: [PIXI.loader.resources["images/alien2_0.png"].texture, PIXI.loader.resources["images/alien2_1.png"].texture]});
+    enemyTextures.push({frames: [PIXI.loader.resources["images/alien3_0.png"].texture, PIXI.loader.resources["images/alien3_1.png"].texture]});
+
+    initAliens(currentWave);
     player = new PIXI.Sprite(PIXI.loader.resources["images/ship.png"].texture);
     
-    alien2_0.x = 64;
-    alien3_0.x = 128;
     
-    alien1_1.x = 64;
-    alien2_1.x = 128;
-    alien3_1.x = 192;
+    player.x = window.innerWidth/2 - player.width/2;
+    player.y = window.innerHeight - player.height * 2;
     
-    alien1_1.y = 64;
-    alien2_1.y = 64;
-    alien3_1.y = 64;
-    
-    player.x = 96;
-    player.y = 192;
-    
-    stage.addChild(alien1_0);
-    stage.addChild(alien1_1);
-    stage.addChild(alien2_0);
-    stage.addChild(alien2_1);
-    stage.addChild(alien3_0);
-    stage.addChild(alien3_1);
-    stage.addChild(player);
     
      //Left
     left.press = function() {
@@ -77,13 +88,24 @@ function setup() {
         rightPressed = true;
         direction = movementSpeed;
     };
+
     right.release = function() {rightPressed = false;};
     
+    
+    stage.addChild(player);
+    for(var r in enemyRows)
+    {
+        for(var e in enemyRows[r].enemies)
+        {
+            stage.addChild(enemyRows[r].enemies[e].sprite);
+        }
+    }
     renderer.render(stage);
        
     gameLoop();
 }
 
+//for game over
 function resetGame()
 {
 
@@ -95,6 +117,37 @@ function resetGame()
         - assign keys
     */
 
+}
+
+function changeLevel()
+{
+    currentWave++;
+    initAliens(currentWave);
+}
+
+function initAliens(wave)
+{
+    alienSpeed += wave;
+    
+    for(var i = 0; i < NUMBER_OF_ENEMIES/SIZE_OF_ROW; i++)
+    {
+        var row = {
+            enemies:[],
+        }
+        var currentTexture = enemyTextures[i];
+        for(var r = 0; r < SIZE_OF_ROW; r++)
+        {
+            var newEnemy = new Enemy(currentTexture.frames[0],currentTexture.frames[1]);
+            //set positon to: y = start_pos * height * row, x = start_pos * width * col
+            newEnemy.sprite.x = ((ENEMY_ROOT_POS.x + newEnemy.sprite.width) * r) + ENEMY_PADDING;
+            newEnemy.sprite.y = ((ENEMY_ROOT_POS.y + newEnemy.sprite.height) * i) + ROW_PADDING;
+            row.enemies.push(newEnemy);
+        }
+        enemyRows.push(row);
+        
+    }
+
+    
 }
 
 function gameLoop()
