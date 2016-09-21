@@ -10,7 +10,7 @@ var Container = PIXI.Container,
     keyboard = utils.keyboard;
 
 
-var renderer = new autoDetectRenderer(256, 256);
+var renderer = new autoDetectRenderer(window.innerWidth, window.innerHeight);
 var stage = new Container();
 var state = play;
 
