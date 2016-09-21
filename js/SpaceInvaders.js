@@ -12,7 +12,7 @@ var Container = PIXI.Container,
 
 var renderer = new autoDetectRenderer(256, 256);
 var stage = new Container();
-var state = null;
+var state = play;
 
 var enemies = [];
 var bunkers = [];
@@ -24,18 +24,50 @@ var leftKey = keyboard(37);
 var rightKey = keyboard(39);
 var spaceKey = keyboard(32);
 
-loader.add("/image").load(resetGame);
+//loader.add("/images").load(resetGame);
 
 function setup() {
     
-
+    
+    var alien1_0 = new PIXI.Sprite(PIXI.loader.resources["images/alien1_0.png"].texture);
+    var alien1_1 = new PIXI.Sprite(PIXI.loader.resources["images/alien1_1.png"].texture);
+    var alien2_0 = new PIXI.Sprite(PIXI.loader.resources["images/alien2_0.png"].texture);
+    var alien2_1 = new PIXI.Sprite(PIXI.loader.resources["images/alien2_1.png"].texture);
+    var alien3_0 = new PIXI.Sprite(PIXI.loader.resources["images/alien3_0.png"].texture);
+    var alien3_1 = new PIXI.Sprite(PIXI.loader.resources["images/alien3_1.png"].texture);
+    player = new PIXI.Sprite(PIXI.loader.resources["images/ship.png"].texture);
+    
+    alien2_0.x = 64;
+    alien3_0.x = 128;
+    
+    alien1_1.x = 64;
+    alien2_1.x = 128;
+    alien3_1.x = 192;
+    
+    alien1_1.y = 64;
+    alien2_1.y = 64;
+    alien3_1.y = 64;
+    
+    player.x = 96;
+    player.y = 192;
+    
+    stage.addChild(alien1_0);
+    stage.addChild(alien1_1);
+    stage.addChild(alien2_0);
+    stage.addChild(alien2_1);
+    stage.addChild(alien3_0);
+    stage.addChild(alien3_1);
+    stage.addChild(player);
+    
     leftKey.press = movePlayer(-1);
-    rightKey.press() = movePlayer(1);
-    spaceKey.press() = playerFire();
+    rightKey.press = movePlayer(1);
+    //spaceKey.press = playerFire();
 
     leftKey.release = stopPlayerMovement();
     rightKey.release = stopPlayerMovement();
-
+    
+    
+    renderer.render(stage);
 }
 
 function resetGame()
@@ -121,9 +153,31 @@ function stopPlayerMovement()
     
 }
 
+function loadProgressHandler(loader, resource) {
+  //Display the file `url` currently being loaded
+  console.log("loading: " + resource.url); 
+
+  //Display the precentage of files currently loaded
+  console.log("progress: " + loader.progress + "%"); 
+}
+
 $(document).ready(function(){
 
+    PIXI.loader
+    .add("images/alien1_0.png")
+    .add("images/alien1_1.png")
+    .add("images/alien2_0.png")
+    .add("images/alien2_1.png")
+    .add("images/alien3_0.png")
+    .add("images/alien3_1.png")
+    .add("images/ship.png")
+    .on("progress", loadProgressHandler)
+    .load(setup);
+    
+    
     document.body.appendChild(renderer.view);
-    //gameLoop();
+    
+    
+    gameLoop();
     
 });

@@ -1,8 +1,8 @@
-var utils = function()
+var utils =
 {
-    var self = this;
+    //var self = this;
 
-    self.hitTestRectangle = function(r1, r2) {
+    hitTestRectangle: function (r1, r2) {
 
     //Define the variables we'll need to calculate
     var hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
@@ -51,9 +51,9 @@ var utils = function()
 
     //`hit` will be either `true` or `false`
     return hit;
-    };
+    },
 
-    self.keyboard = function(keyCode) {
+    keyboard: function(keyCode) {
         var key = {};
         key.code = keyCode;
         key.isDown = false;
