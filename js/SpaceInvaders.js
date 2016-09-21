@@ -20,9 +20,10 @@ var playerProjectiles = [];
 var enemyProjectiles = [];
 var player = null;
 
-var leftKey = keyboard(37);
-var rightKey = keyboard(39);
-var spaceKey = keyboard(32);
+var left = keyboard(37),
+      up = keyboard(38),
+      right = keyboard(39),
+      down = keyboard(40);
 
 //loader.add("/images").load(resetGame);
 
@@ -59,12 +60,23 @@ function setup() {
     stage.addChild(alien3_1);
     stage.addChild(player);
     
-    leftKey.press = movePlayer(-1);
-    rightKey.press = movePlayer(1);
-    //spaceKey.press = playerFire();
+     //Left arrow key `press` method
+    left.press = function() {
+        console.log("left pressed");
+    };
 
-    leftKey.release = stopPlayerMovement();
-    rightKey.release = stopPlayerMovement();
+    //Left arrow key `release` method
+    left.release = function() {
+        console.log("left released");
+    };
+
+    //Right
+    right.press = function() {
+        console.log("right pressed");
+    };
+    right.release = function() {
+       console.log("right released");
+    };
     
     
     renderer.render(stage);
