@@ -39,6 +39,7 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
     self.drop = function()
     {
         self.sprite.y += self.sprite.vy;
+        dir *= -1;
     }
 
     self.setDir = function(d)
@@ -46,11 +47,22 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
         dir = d;
     };
 
+    self.getDir = function()
+    {
+        return dir;
+    };
+
 
     
 }
 
-var renderer = new autoDetectRenderer(window.innerWidth, window.innerHeight);
+var screen = {
+    left: window.innerWidth,
+    top: 0,
+    right: 0,
+    bottom: window.innerHeight,
+}
+var renderer = new autoDetectRenderer(screen.left, screen.bottom);
 var stage = new Container();
 var state = play;
 
@@ -209,15 +221,65 @@ function animateEnemies()
         enemyTimerStarted = true;
         enemyTimer = setInterval(function()
         {
+             //find visible enemy farthest left and farthest right
+            var drop = 0;
+            var dropping = false;
             for(var r in enemyRows)
             {
                 for(var e in enemyRows[r].enemies)
                 {
                     enemyRows[r].enemies[e].animate();
+                    
                 }
             }
-        },enemySpeed);
+           
+
+        
+            if(shouldEnemyDrop())
+            {
+                dropEnemies();
+            }
+
+        },200);
+        
+
+        //if they are near the edge, drop all.
     }
+}
+
+function dropEnemies(){
+    for(var r in enemyRows)
+    {
+        for(var e in enemyRows[r].enemies)
+        {
+            
+            enemyRows[r].enemies[e].drop();
+        }
+    }
+}
+
+function shouldEnemyDrop()
+{
+    for(var r in enemyRows)
+    {
+        for(var e in enemyRows[r].enemies)
+        {
+            var leftDif = screen.left - enemyRows[r].enemies[e].sprite.x;
+            var rightDif = enemyRows[r].enemies[e].sprite.x;
+            if(leftDif <= (enemyRows[r].enemies[e].sprite.width + ENEMY_PADDING) && enemyRows[r].enemies[e].sprite.visible)
+            {
+                return true;
+                
+            }
+            else if (rightDif <= ENEMY_PADDING && enemyRows[r].enemies[e].sprite.visible)
+            {
+                return true;
+                
+            }
+            
+        }
+    }
+    return false
 }
 
 function play() {
