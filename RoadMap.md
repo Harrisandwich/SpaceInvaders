@@ -10,7 +10,6 @@ Space Invaders:
 - add enemy to stage *completed*
 - add shooting *completed*
 
-
 - kill enemies 
 - improve bullet tracking
 - enemy attack
