@@ -75,6 +75,7 @@ var playerProjectiles = [];
 var enemyProjectiles = [];
 var enemyTextures = [];
 var player = null;
+var bullet = null;
 var leftPressed = false;
 var rightPressed = false;
 var enemyTimerStarted = false;
@@ -84,7 +85,8 @@ var direction = 0;
 var left = keyboard(37),
       up = keyboard(38),
       right = keyboard(39),
-      down = keyboard(40);
+      down = keyboard(40),
+      space = keyboard(32);
 
 //loader.add("/images").load(resetGame);
 
@@ -129,9 +131,16 @@ function setup() {
         rightPressed = true;
         direction = movementSpeed;
     };
-
     right.release = function() {rightPressed = false;};
     
+    //Space
+    space.press = function() {
+        if (bullet != null){stage.removeChild(bullet); }
+        bullet = new PIXI.Sprite(PIXI.loader.resources["images/ship_bullet.png"].texture);
+        bullet.x = player.x;
+        bullet.y = player.y - 20;
+        stage.addChild(bullet);
+    };
     
     stage.addChild(player);
     for(var r in enemyRows)
@@ -196,7 +205,16 @@ function gameLoop()
 {
     requestAnimationFrame(gameLoop);
 
+
     animate();
+
+    if (leftPressed || rightPressed){movePlayer(direction);}
+
+    if (bullet !== null){
+        moveBullet(bullet);
+    }
+
+
     state();
 
     renderer.render(stage);
@@ -301,6 +319,10 @@ function movePlayer(dir)
     player.x += player.vx;
 }
 
+function moveBullet(bullet){
+    bullet.y -= 10;
+}
+
 function stopPlayerMovement()
 {
     
@@ -324,6 +346,7 @@ $(document).ready(function(){
     .add("images/alien3_0.png")
     .add("images/alien3_1.png")
     .add("images/ship.png")
+    .add("images/ship_bullet.png")
     .on("progress", loadProgressHandler)
     .load(setup);
     
