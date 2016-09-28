@@ -52,6 +52,15 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
         return dir;
     };
 
+    self.fire = function()
+    {
+        //create bullet
+        var bullet = new Sprite(PIXI.loader.resources["images/alien_bullet.png"].texture);
+        bullet.x = self.sprite.x;
+        bullet.y = self.sprite.y;
+        return bullet
+    }
+
 
     
 }
@@ -80,6 +89,7 @@ var leftPressed = false;
 var rightPressed = false;
 var enemyTimerStarted = false;
 var enemyTimer = null;
+var enemyAttackTimer = null;
 var direction = 0;
 
 var left = keyboard(37),
@@ -97,9 +107,11 @@ var ENEMY_ROOT_POS = {
     x: 0,
     y: 0,
 }
+var ENEMY_PROJECTILE_SPEED = 10;
 var ENEMY_PADDING = 20;
 var ROW_PADDING = 50;
 var SIZE_OF_ROW = 5;
+var ATTACK_RATE = 0.6;
 var currentWave = 1;
 var enemySpeed = ENEMY_BASE_SPEED_MS;
 
@@ -110,7 +122,8 @@ function setup() {
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien1_0.png"].texture, PIXI.loader.resources["images/alien1_1.png"].texture]});
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien2_0.png"].texture, PIXI.loader.resources["images/alien2_1.png"].texture]});
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien3_0.png"].texture, PIXI.loader.resources["images/alien3_1.png"].texture]});
-
+    //change attack time to something more variable
+    enemyAttackTimer = setInterval(enemyAttack,3000);
     initAliens(currentWave);
     player = new PIXI.Sprite(PIXI.loader.resources["images/ship.png"].texture);
     
@@ -205,7 +218,6 @@ function gameLoop()
 {
     requestAnimationFrame(gameLoop);
 
-
     animate();
 
     if (leftPressed || rightPressed){movePlayer(direction);}
@@ -225,6 +237,7 @@ function animate()
 {
     animatePlayer();
     animateEnemies();
+    animateEnemyProjectiles();
 }
 
 function animatePlayer()
@@ -265,7 +278,45 @@ function animateEnemies()
     }
 }
 
-function dropEnemies(){
+function animateEnemyProjectiles()
+{
+    
+    //move each bullet down
+    //if offscreen, kill bullet
+    for(var b in enemyProjectiles)
+    {
+        enemyProjectiles[b].y += ENEMY_PROJECTILE_SPEED;
+        if(enemyProjectiles[b].y > screen.bottom)
+        {
+            stage.removeChild(enemyProjectiles[b]);
+            enemyProjectiles.splice(b,1);
+        }
+    }
+
+}
+
+function enemyAttack()
+{
+    //roll to fire
+    var attackChance = Math.random();
+    if(attackChance > ATTACK_RATE)
+    {
+        //pick enemy
+        var row = Math.floor(Math.random() * ((enemyRows.length - 1) - 1) );
+        var column = Math.floor(Math.random() * ((enemyRows[row].enemies.length - 1) - 1) );
+        //fire
+        if(enemyRows[row].enemies[column] != null)
+        {
+            var bullet = enemyRows[row].enemies[column].fire();
+            stage.addChild(bullet);
+            //store bullet into projectile array
+            enemyProjectiles.push(bullet);
+        }
+    }
+        
+}
+function dropEnemies()
+{
     for(var r in enemyRows)
     {
         for(var e in enemyRows[r].enemies)
@@ -347,6 +398,7 @@ $(document).ready(function(){
     .add("images/alien3_1.png")
     .add("images/ship.png")
     .add("images/ship_bullet.png")
+    .add("images/alien_bullet.png")
     .on("progress", loadProgressHandler)
     .load(setup);
     
