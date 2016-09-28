@@ -93,6 +93,7 @@ var left = keyboard(37),
 //Numbers
 var NUMBER_OF_ENEMIES = 15;
 var ENEMY_BASE_SPEED_MS = 1000;
+var BULLET_BASE_SPEED = 10;
 var ENEMY_ROOT_POS = {
     x: 0,
     y: 0,
@@ -135,11 +136,11 @@ function setup() {
     
     //Space
     space.press = function() {
-        if (bullet != null){stage.removeChild(bullet); }
         bullet = new PIXI.Sprite(PIXI.loader.resources["images/ship_bullet.png"].texture);
         bullet.x = player.x;
         bullet.y = player.y - 20;
-        stage.addChild(bullet);
+        playerProjectiles.push(bullet);
+        stage.addChild(playerProjectiles[playerProjectiles.length - 1]);
     };
     
     stage.addChild(player);
@@ -210,11 +211,16 @@ function gameLoop()
 
     if (leftPressed || rightPressed){movePlayer(direction);}
 
-    if (bullet !== null){
-        moveBullet(bullet);
+    if (playerProjectiles.length > 0){
+        // Move Bullets
+        for (i = 0; i < playerProjectiles.length; i++){
+            if (moveBullet(playerProjectiles[i])){
+                stage.removeChild(playerProjectiles[i]);
+                // TODO: Remove from playerProjectile array
+            }
+        }
     }
-
-
+    
     state();
 
     renderer.render(stage);
@@ -319,8 +325,14 @@ function movePlayer(dir)
     player.x += player.vx;
 }
 
+/*
+ * Returns true if bullet should be removed
+ */
 function moveBullet(bullet){
-    bullet.y -= 10;
+    bullet.y -= BULLET_BASE_SPEED;
+    if (bullet.y <= 0){
+        return true;
+    }
 }
 
 function stopPlayerMovement()
