@@ -11,9 +11,10 @@ Space Invaders:
 - add shooting *completed*
 
 - kill enemies 
-- improve bullet tracking
-- enemy attack
-- bunkers
+- improve bullet tracking *completed*
+- enemy attack *completed*
+- bunkers *completed*
 - score
 - waves 
+- kill player
 - game over
