@@ -163,13 +163,8 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
     
 }
 
-var screen = {
-    left: window.innerWidth,
-    top: 0,
-    right: 0,
-    bottom: window.innerHeight,
-}
-var renderer = new autoDetectRenderer(screen.left, screen.bottom);
+var screen = null;
+var renderer = null;
 var stage = new Container();
 var state = play;
 
@@ -213,8 +208,8 @@ var ROW_PADDING = 50;
 var SIZE_OF_ROW = 5;
 var ATTACK_RATE = 0.6;
 var NUM_BUNKERS = 3;
-var BUNKER_PADDING = (screen.left/3);
-var BUNKER_HEIGHT = screen.bottom - (screen.bottom/3)
+var BUNKER_PADDING = 0;
+var BUNKER_HEIGHT = 0;
 var currentWave = 1;
 var enemySpeed = ENEMY_BASE_SPEED_MS;
 
@@ -251,13 +246,7 @@ function setup() {
     right.release = function() {rightPressed = false;};
     
     //Space
-    space.press = function() {
-        bullet = new PIXI.Sprite(PIXI.loader.resources["images/ship_bullet.png"].texture);
-        bullet.x = player.x;
-        bullet.y = player.y - 20;
-        playerProjectiles.push(bullet);
-        stage.addChild(playerProjectiles[playerProjectiles.length - 1]);
-    };
+    space.press = playerFire
     
     stage.addChild(player);
     for(var r in enemyRows)
@@ -470,6 +459,17 @@ function enemyAttack()
     }
         
 }
+
+function playerFire()
+{
+    
+    bullet = new PIXI.Sprite(PIXI.loader.resources["images/ship_bullet.png"].texture);
+    bullet.x = player.x;
+    bullet.y = player.y - 20;
+    playerProjectiles.push(bullet);
+    stage.addChild(playerProjectiles[playerProjectiles.length - 1]);
+    
+}
 function dropEnemies()
 {
     for(var r in enemyRows)
@@ -532,11 +532,10 @@ function moveBullet(bullet){
     bullet.y -= BULLET_BASE_SPEED;
     // If bullet is inside enemy. Destroy.
     
-    /*enemyRows.enemies.forEach(function(enemy) {
-        if(hitTestRectangle(bullet, enemy)) {
-            console.log("Hit");
-        }
-    });*/
+    /*for(var r in enemyRows) {
+       
+       for(var c in )
+    };*/
     
     for(var b in bunkers)
     {
@@ -552,6 +551,8 @@ function moveBullet(bullet){
     if (bullet.y <= 0){
         return true;
     }
+
+    return false
 }
 
 function stopPlayerMovement()
@@ -566,8 +567,42 @@ function loadProgressHandler(loader, resource) {
   //Display the precentage of files currently loaded
   console.log("progress: " + loader.progress + "%"); 
 }
+var fireTimer = null;
+function movePlayerTouch(e)
+{
+    e.originalEvent.preventDefault();
+    player.x = e.originalEvent.touches[0].clientX;
+}
+
+function startPlayerTouch(e)
+{
+   
+    if(fireTimer == null)
+    {
+        fireTimer = setInterval(playerFire,500);
+    }
+}
+
+function endPlayerTouch(e)
+{
+    if(fireTimer != null)
+    {
+        clearInterval(fireTimer);
+        fireTimer = null;
+    }
+}
 
 $(document).ready(function(){
+
+    screen = {
+    left: window.innerWidth,
+    top: 0,
+    right: 0,
+    bottom: window.innerHeight,
+    }
+    renderer = new autoDetectRenderer(screen.left, screen.bottom);
+    BUNKER_PADDING = (screen.left/3);
+    BUNKER_HEIGHT = screen.bottom - (screen.bottom/3);
 
     PIXI.loader
     .add("images/alien1_0.png")
@@ -582,9 +617,12 @@ $(document).ready(function(){
     .on("progress", loadProgressHandler)
     .load(setup);
     
-    
+    $(document).on("touchmove",movePlayerTouch);
+    $(document).on("touchend",endPlayerTouch);
+    $(document).on("touchstart",startPlayerTouch);
     document.body.appendChild(renderer.view);
     
 
     
 });
+
