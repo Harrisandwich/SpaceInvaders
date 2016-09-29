@@ -19,25 +19,25 @@ var Bunker = function()
      //create layout
     var layout = {
         rows:[{
-            cells:[0,0,1,1,1,1,1,1,0,0],
+            cells:[0,0,1,1,1,1,1,1,1,1,0,0],
         },
         {
-            cells:[0,1,1,1,1,1,1,1,1,0],
+            cells:[0,1,1,1,1,1,1,1,1,1,1,0],
         },
         {
-            cells:[1,1,1,1,1,1,1,1,1,1],
+            cells:[1,1,1,1,1,1,1,1,1,1,1,1],
         },
         {
-            cells:[1,1,1,1,1,1,1,1,1,1],
+            cells:[1,1,1,1,1,1,1,1,1,1,1,1],
         },
         {
-            cells:[1,1,1,0,0,0,0,1,1,1],
+            cells:[1,1,1,0,0,0,0,0,0,1,1,1],
         },
         {
-            cells:[1,1,1,0,0,0,0,1,1,1],
+            cells:[1,1,1,0,0,0,0,0,0,1,1,1],
         },
         {
-            cells:[1,1,1,0,0,0,0,1,1,1],
+            cells:[1,1,1,0,0,0,0,0,0,1,1,1],
         }]
     }
     self.width = SQUARE_SIZE * layout.rows[0].cells.length;
@@ -46,6 +46,7 @@ var Bunker = function()
     init();
     self.checkHit = function(bullet)
     {
+        
         for(var c in cells)
         {
             var gp = self.bunker.toGlobal(cells[c].position);
@@ -59,11 +60,25 @@ var Bunker = function()
             if(hitTestRectangle(cellGlobal,bullet))
             {
                 cells[c].visible = false;
-                cells.splice(c,1);
-                return true;
+                return true
             }
         }
-        return false;
+        return false
+        
+    }
+    self.cleanup = function()
+    {
+        for(var c in cells)
+        {
+            if(!cells[c].visible)
+            {
+                cells.splice(c,1);
+            }
+        }
+    }
+    self.getCells = function()
+    {
+        return cells;
     }
     function init()
     {
@@ -79,12 +94,15 @@ var Bunker = function()
                 {
                     var rect = new PIXI.Graphics();
                     rect.beginFill(0xFFFFFF);
-                    rect.drawRect(posX, posY, SQUARE_SIZE, SQUARE_SIZE);
+                    rect.drawRect(0, 0, SQUARE_SIZE, SQUARE_SIZE);
                     rect.endFill();
+                    rect.x = posX;
+                    rect.y = posY;
+                    self.bunker.addChild(rect);
                     //push to array
                     cells.push(rect);
                     //add child
-                    self.bunker.addChild(rect);
+                    
                 }
             }
         }
@@ -195,7 +213,7 @@ var ROW_PADDING = 50;
 var SIZE_OF_ROW = 5;
 var ATTACK_RATE = 0.6;
 var NUM_BUNKERS = 3;
-var BUNKER_PADDING = screen.left/3;
+var BUNKER_PADDING = (screen.left/3);
 var BUNKER_HEIGHT = screen.bottom - (screen.bottom/3)
 var currentWave = 1;
 var enemySpeed = ENEMY_BASE_SPEED_MS;
@@ -305,7 +323,7 @@ function initBunkers()
     {
         var bunker = new Bunker();
         bunker.bunker.y = BUNKER_HEIGHT;
-        bunker.bunker.x = (i * BUNKER_PADDING) + bunker.width;
+        bunker.bunker.x = (i * BUNKER_PADDING) + bunker.width/2;
         bunkers.push(bunker);
         stage.addChild(bunker.bunker);
     }
@@ -318,15 +336,7 @@ function gameLoop()
 
     if (leftPressed || rightPressed){movePlayer(direction);}
 
-    if (playerProjectiles.length > 0){
-        for(var b in playerProjectiles)
-        {
-            if (moveBullet(playerProjectiles[b])){
-                stage.removeChild(playerProjectiles[b]);
-                playerProjectiles.splice(b,1);
-            }
-        }
-    }
+    
     
     state();
 
@@ -337,6 +347,7 @@ function gameLoop()
 function animate()
 {
     animatePlayer();
+    animatePlayerProjectiles();
     animateEnemies();
     animateEnemyProjectiles();
 }
@@ -387,32 +398,57 @@ function animateEnemyProjectiles()
     for(var p in enemyProjectiles)
     {
         enemyProjectiles[p].y += ENEMY_PROJECTILE_SPEED;
-        var deleted = false;
+        
         if(enemyProjectiles[p].y > screen.bottom)
         {
-            stage.removeChild(enemyProjectiles[p]);
-            enemyProjectiles.splice(p,1);
-            deleted = true
+            enemyProjectiles[p].visible = false;
         }
-        if(!deleted)
+
+        for(var b in bunkers)
         {
-            for(var b in bunkers)
+            if(enemyProjectiles[p].visible && hitTestRectangle(bunkers[b].bunker,enemyProjectiles[p]))
             {
+                 
                 if(bunkers[b].checkHit(enemyProjectiles[p]))
                 {
-                    stage.removeChild(enemyProjectiles[p]);
-                    enemyProjectiles.splice(p,1);
-                    break;
+                   enemyProjectiles[p].visible = false;
                 }
             }
+
+            bunkers[b].cleanup();
+            
         }
-        
     }
-    
-        
+    //clean up
+    for(var p in enemyProjectiles)
+    {
+        if(!enemyProjectiles[p].visible)
+        {
+            enemyProjectiles.splice(p,1);
+        }
+    }
 
 }
 
+function animatePlayerProjectiles()
+{
+    if (playerProjectiles.length > 0){
+        for(var b in playerProjectiles)
+        {
+            if (playerProjectiles[b].visible && moveBullet(playerProjectiles[b])){
+                playerProjectiles[b].visible = false;
+            }
+        }
+    }
+
+    //cleanup
+    for(var b in playerProjectiles)
+    {
+        if (!playerProjectiles[b].visible){
+            playerProjectiles.splice(b,1);
+        }
+    }
+}
 function enemyAttack()
 {
     //roll to fire
@@ -502,7 +538,17 @@ function moveBullet(bullet){
         }
     });*/
     
-    
+    for(var b in bunkers)
+    {
+        if(hitTestRectangle(bunkers[b].bunker,bullet))
+        {
+            if(bunkers[b].checkHit(bullet))
+            {
+                return true;
+            }
+        }
+    }
+
     if (bullet.y <= 0){
         return true;
     }
