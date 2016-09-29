@@ -11,6 +11,86 @@ var Container = PIXI.Container,
     hitTestRectangle = utils.hitTestRectangle,
     keyboard = utils.keyboard;
 
+var Bunker = function()
+{
+    var SQUARE_SIZE = 10;
+    var self = this;
+    var cells = [];
+     //create layout
+    var layout = {
+        rows:[{
+            cells:[0,0,1,1,1,1,1,1,0,0],
+        },
+        {
+            cells:[0,1,1,1,1,1,1,1,1,0],
+        },
+        {
+            cells:[1,1,1,1,1,1,1,1,1,1],
+        },
+        {
+            cells:[1,1,1,1,1,1,1,1,1,1],
+        },
+        {
+            cells:[1,1,1,0,0,0,0,1,1,1],
+        },
+        {
+            cells:[1,1,1,0,0,0,0,1,1,1],
+        },
+        {
+            cells:[1,1,1,0,0,0,0,1,1,1],
+        }]
+    }
+    self.width = SQUARE_SIZE * layout.rows[0].cells.length;
+    self.bunker = new Container();
+
+    init();
+    self.checkHit = function(bullet)
+    {
+        for(var c in cells)
+        {
+            var gp = self.bunker.toGlobal(cells[c].position);
+            var cellGlobal = {
+                x: gp.x,
+                y: gp.y,
+                width:cells[c].width,
+                height:cells[c].height,
+
+            };
+            if(hitTestRectangle(cellGlobal,bullet))
+            {
+                cells[c].visible = false;
+                cells.splice(c,1);
+                return true;
+            }
+        }
+        return false;
+    }
+    function init()
+    {
+       
+        //create squares
+        for(var r in layout.rows)
+        {
+            var posY = r * SQUARE_SIZE;
+            for(var c in layout.rows[r].cells)
+            {
+                var posX = c * SQUARE_SIZE;
+                if(layout.rows[r].cells[c] == 1)
+                {
+                    var rect = new PIXI.Graphics();
+                    rect.beginFill(0xFFFFFF);
+                    rect.drawRect(posX, posY, SQUARE_SIZE, SQUARE_SIZE);
+                    rect.endFill();
+                    //push to array
+                    cells.push(rect);
+                    //add child
+                    self.bunker.addChild(rect);
+                }
+            }
+        }
+
+    }
+}
 var Enemy = function(frameOneTexture,frameTwoTexture)
 {
     var self = this;
@@ -83,6 +163,7 @@ var bunkers = [];
 var playerProjectiles = [];
 var enemyProjectiles = [];
 var enemyTextures = [];
+var bunkers = [];
 var player = null;
 var bullet = null;
 var leftPressed = false;
@@ -113,6 +194,9 @@ var ENEMY_PADDING = 20;
 var ROW_PADDING = 50;
 var SIZE_OF_ROW = 5;
 var ATTACK_RATE = 0.6;
+var NUM_BUNKERS = 3;
+var BUNKER_PADDING = screen.left/3;
+var BUNKER_HEIGHT = screen.bottom - (screen.bottom/3)
 var currentWave = 1;
 var enemySpeed = ENEMY_BASE_SPEED_MS;
 
@@ -124,7 +208,8 @@ function setup() {
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien2_0.png"].texture, PIXI.loader.resources["images/alien2_1.png"].texture]});
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien3_0.png"].texture, PIXI.loader.resources["images/alien3_1.png"].texture]});
     //change attack time to something more variable
-    enemyAttackTimer = setInterval(enemyAttack,3000);
+    enemyAttackTimer = setInterval(enemyAttack,500);
+    initBunkers();
     initAliens(currentWave);
     player = new PIXI.Sprite(PIXI.loader.resources["images/ship.png"].texture);
     
@@ -214,7 +299,17 @@ function initAliens(wave)
 
     
 }
-
+function initBunkers()
+{
+    for(var i = 0; i < NUM_BUNKERS; i++)
+    {
+        var bunker = new Bunker();
+        bunker.bunker.y = BUNKER_HEIGHT;
+        bunker.bunker.x = (i * BUNKER_PADDING) + bunker.width;
+        bunkers.push(bunker);
+        stage.addChild(bunker.bunker);
+    }
+}
 function gameLoop()
 {
     requestAnimationFrame(gameLoop);
@@ -289,15 +384,32 @@ function animateEnemyProjectiles()
     
     //move each bullet down
     //if offscreen, kill bullet
-    for(var b in enemyProjectiles)
+    for(var p in enemyProjectiles)
     {
-        enemyProjectiles[b].y += ENEMY_PROJECTILE_SPEED;
-        if(enemyProjectiles[b].y > screen.bottom)
+        enemyProjectiles[p].y += ENEMY_PROJECTILE_SPEED;
+        var deleted = false;
+        if(enemyProjectiles[p].y > screen.bottom)
         {
-            stage.removeChild(enemyProjectiles[b]);
-            enemyProjectiles.splice(b,1);
+            stage.removeChild(enemyProjectiles[p]);
+            enemyProjectiles.splice(p,1);
+            deleted = true
         }
+        if(!deleted)
+        {
+            for(var b in bunkers)
+            {
+                if(bunkers[b].checkHit(enemyProjectiles[p]))
+                {
+                    stage.removeChild(enemyProjectiles[p]);
+                    enemyProjectiles.splice(p,1);
+                    break;
+                }
+            }
+        }
+        
     }
+    
+        
 
 }
 
@@ -314,6 +426,7 @@ function enemyAttack()
         if(enemyRows[row].enemies[column] != null)
         {
             var bullet = enemyRows[row].enemies[column].fire();
+            
             stage.addChild(bullet);
             //store bullet into projectile array
             enemyProjectiles.push(bullet);
