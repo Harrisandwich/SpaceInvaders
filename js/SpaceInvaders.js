@@ -190,6 +190,8 @@ var direction = 0;
 var score = 0;
 var scoreLabel = null;
 var scoreText = null;
+var newWaveText = null;
+var newWaveStart = false;
 var left = keyboard(37),
       up = keyboard(38),
       right = keyboard(39),
@@ -300,9 +302,25 @@ function updateScore()
     stage.addChild(scoreText);
 }
 
-function gameOver()
+function setGameOver()
 {
     //Show gameOver text and button
+    clearInterval(enemyTimer);
+    state = gameOver;
+    gameOverText = new PIXI.Text(
+        "YOU DIED",
+    {font: "32px sans-serif", fill: "white"}
+    );
+    
+    gameOverText.position.set(screen.left/2 - gameOverText.width/2, screen.bottom/2);
+    stage.addChild(gameOverText);
+}
+
+function gameOver()
+{
+    //do sum shit
+    //detect a click ya anus
+    
 }
 //for game over
 function resetGame()
@@ -320,14 +338,57 @@ function resetGame()
 
 function changeLevel()
 {
+    clearInterval(enemyTimer);
+    enemyTimer = null;
     currentWave++;
+    showNewWaveText(currentWave);
     initAliens(currentWave);
+    for(var r in enemyRows)
+    {
+        for(var e in enemyRows[r].enemies)
+        {
+            stage.addChild(enemyRows[r].enemies[e].sprite);
+        }
+    }
+    enemyTimer = setInterval(function()
+    {
+            //find visible enemy farthest left and farthest right
+        var drop = 0;
+        var dropping = false;
+        for(var r in enemyRows)
+        {
+            for(var e in enemyRows[r].enemies)
+            {
+                enemyRows[r].enemies[e].animate();
+                
+            }
+        }
+        
+
+    
+        if(shouldEnemyDrop())
+        {
+            dropEnemies();
+        }
+
+    },enemySpeed);
 }
 
+function showNewWaveText(wave) 
+{
+    newWaveStart = true;
+    newWaveText = new PIXI.Text(
+        "Wave " + wave.toString(),
+        {font: "32px sans-serif", fill: "white"}
+    );
+    newWaveText.position.set(screen.left/2 - newWaveText.width/2, screen.bottom/2);
+    stage.addChild(newWaveText);
+    
+}
 function initAliens(wave)
 {
     enemySpeed = ENEMY_BASE_SPEED_MS/wave;
-    
+    enemyRows = [];
     for(var i = 0; i < NUMBER_OF_ENEMIES/SIZE_OF_ROW; i++)
     {
         var row = {
@@ -377,7 +438,7 @@ function gameLoop()
             }
         }
     }
-
+    
     state();
 
     renderer.render(stage);
@@ -391,6 +452,10 @@ function animate()
     animateEnemies();
     animateEnemyProjectiles();
     animateScorePopups()
+    if(newWaveStart)
+    {
+        animateNewWaveText();
+    }
 }
 
 function animatePlayer()
@@ -424,7 +489,7 @@ function animateEnemies()
                 dropEnemies();
             }
 
-        },200);
+        },enemySpeed);
         
 
         //if they are near the edge, drop all.
@@ -464,8 +529,16 @@ function animateEnemyProjectiles()
             stage.removeChild(player);
             enemyProjectiles[p].visible = false;
         }
+        if(hitTestRectangle(player, enemyProjectiles[p])) {
+            stage.removeChild(player.sprite);
+            stage.removeChild(player);
+            enemyProjectiles[p].visible = false;
+            setGameOver();
+        }
+
     }
-    //clean up
+    
+    
     for(var p in enemyProjectiles)
     {
         if(!enemyProjectiles[p].visible)
@@ -496,6 +569,17 @@ function animatePlayerProjectiles()
     }
 }
 
+function animateNewWaveText()
+{
+    newWaveText.y -= 1;
+    newWaveText.alpha -= 0.01;
+
+    if(newWaveText.alpha <= 0)
+    {
+        newWaveStart = false;
+        stage.removeChild(newWaveText);
+    }
+}
 function animateScorePopups()
 {
     /*
@@ -595,13 +679,21 @@ function shouldEnemyDrop()
 }
 
 function play() {
-    /*
-        - player can move 
-        - player can shoot
-        - enemies move side to side on timer
-        - enemies move down at interval
-        - enemy move timer decreases in time as more enemies are killed 
-    */
+    
+    animate();
+    
+    if (leftPressed || rightPressed){movePlayer(direction);}
+
+    if (playerProjectiles.length > 0){
+        for(var b in playerProjectiles)
+        {
+            if (moveBullet(b, playerProjectiles)){
+                stage.removeChild(playerProjectiles[b]);
+                playerProjectiles.splice(b,1);
+            }
+        }
+    }
+    checkWaveOver();
     
 }
 
@@ -652,7 +744,7 @@ function moveBullet(bullet){
              
         }
     }
-
+    
     for(var b in bunkers)
     {
         if(hitTestRectangle(bunkers[b].bunker,bullet))
@@ -670,10 +762,21 @@ function moveBullet(bullet){
 
     return false
 }
-
-function stopPlayerMovement()
+function checkWaveOver()
 {
-    
+    var deadCount = 0;
+    for(var r in enemyRows)
+    {
+        if(enemyRows[r].enemies.length == 0)
+        {
+            deadCount++;
+        }
+    }
+
+    if(deadCount == Math.round(NUMBER_OF_ENEMIES/SIZE_OF_ROW))
+    {
+        changeLevel();
+    }
 }
 
 function loadProgressHandler(loader, resource) {
