@@ -155,8 +155,8 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
     {
         //create bullet
         var bullet = new Sprite(PIXI.loader.resources["images/alien_bullet.png"].texture);
-        bullet.x = self.sprite.x;
-        bullet.y = self.sprite.y;
+        bullet.x = self.sprite.x + self.sprite.width/2;
+        bullet.y = self.sprite.y + self.sprite.height;
         return bullet
     }
 
@@ -547,8 +547,8 @@ function playerFire()
 {
     
     bullet = new PIXI.Sprite(PIXI.loader.resources["images/ship_bullet.png"].texture);
-    bullet.x = player.x;
-    bullet.y = player.y - 20;
+    bullet.x = player.x + player.width/2;
+    bullet.y = player.y;
     playerProjectiles.push(bullet);
     stage.addChild(playerProjectiles[playerProjectiles.length - 1]);
     
