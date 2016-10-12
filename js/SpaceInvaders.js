@@ -186,7 +186,9 @@ var enemyTimerStarted = false;
 var enemyTimer = null;
 var enemyAttackTimer = null;
 var direction = 0;
-
+var score = 0;
+var scoreLabel = null;
+var scoreText = null;
 var left = keyboard(37),
       up = keyboard(38),
       right = keyboard(39),
@@ -265,6 +267,32 @@ function setup() {
     gameLoop();
 }
 
+
+function showScore()
+{
+    //add score text to screen
+    scoreLabel = new PIXI.Text(
+        "Score:",
+    {font: "18px sans-serif", fill: "white"}
+    );
+    scoreText = new PIXI.Text(
+        "hello",
+        {font: "18px sans-serif", fill: "white"}
+    )
+    scoreLabel.position.set(54, 96);
+    scoretext.position.set(104, 96);
+    stage.addChild(scoreLabel);
+}
+
+function updateScore()
+{
+    //change score text
+}
+
+function gameOver()
+{
+    //Show gameOver text and button
+}
 //for game over
 function resetGame()
 {

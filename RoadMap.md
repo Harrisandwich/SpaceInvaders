@@ -18,3 +18,4 @@ Space Invaders:
 - waves 
 - kill player
 - game over
+- start screen
