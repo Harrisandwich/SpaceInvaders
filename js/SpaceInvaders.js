@@ -155,8 +155,8 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
     {
         //create bullet
         var bullet = new Sprite(PIXI.loader.resources["images/alien_bullet.png"].texture);
-        bullet.x = self.sprite.x;
-        bullet.y = self.sprite.y;
+        bullet.x = self.sprite.x + self.sprite.width/2;
+        bullet.y = self.sprite.y + self.sprite.height;
         return bullet
     }
 
@@ -178,6 +178,7 @@ var playerProjectiles = [];
 var enemyProjectiles = [];
 var enemyTextures = [];
 var bunkers = [];
+var scorePopups = [];
 var player = null;
 var bullet = null;
 var leftPressed = false;
@@ -263,7 +264,7 @@ function setup() {
         }
     }
     renderer.render(stage);
-    
+    showScore();
     gameLoop();
 }
 
@@ -276,17 +277,27 @@ function showScore()
     {font: "18px sans-serif", fill: "white"}
     );
     scoreText = new PIXI.Text(
-        "hello",
+        score.toString(),
         {font: "18px sans-serif", fill: "white"}
-    )
-    scoreLabel.position.set(54, 96);
-    scoretext.position.set(104, 96);
+    );
+
+    scoreLabel.position.set(10, 10);
+    scoreText.position.set(75, 10);
     stage.addChild(scoreLabel);
+    stage.addChild(scoreText);
 }
 
 function updateScore()
 {
     //change score text
+    stage.removeChild(scoreText);
+    scoreText = new PIXI.Text(
+        score,
+        {font: "18px sans-serif", fill: "white"}
+    );
+    scoreText.position.set(75, 10);
+    stage.addChild(scoreLabel);
+    stage.addChild(scoreText);
 }
 
 function gameOver()
@@ -379,6 +390,7 @@ function animate()
     animatePlayerProjectiles();
     animateEnemies();
     animateEnemyProjectiles();
+    animateScorePopups()
 }
 
 function animatePlayer()
@@ -483,6 +495,37 @@ function animatePlayerProjectiles()
         }
     }
 }
+
+function animateScorePopups()
+{
+    /*
+        - appears
+        - floats up and fades
+        - at max fade, remove
+
+    */
+    for(var i in scorePopups)
+    {
+        scorePopups[i].alpha -= 0.01;
+        scorePopups[i].y -= 0.5;
+        if(scorePopups[i].alpha <= 0)
+        {
+            stage.removeChild(scorePopups[i]);
+            scorePopups.splice(i,1);
+        }
+    }
+}
+
+function addScorePopup(score, posX, posY)
+{
+    var popupText = new PIXI.Text(
+        score.toString(),
+        {font: "12px sans-serif", fill: "white"}
+    );
+    popupText.position.set(posX, posY);
+    scorePopups.push(popupText);
+    stage.addChild(popupText);
+}
 function enemyAttack()
 {
     //roll to fire
@@ -509,8 +552,8 @@ function playerFire()
 {
     
     bullet = new PIXI.Sprite(PIXI.loader.resources["images/ship_bullet.png"].texture);
-    bullet.x = player.x;
-    bullet.y = player.y - 20;
+    bullet.x = player.x + player.width/2;
+    bullet.y = player.y;
     playerProjectiles.push(bullet);
     stage.addChild(playerProjectiles[playerProjectiles.length - 1]);
     
@@ -582,6 +625,25 @@ function moveBullet(bullet){
         {
             if(hitTestRectangle(bullet, enemyRows[r].enemies[e].sprite)) {
                 stage.removeChild(bullet);
+                var tempScore = 0;
+                switch(r)
+                {
+                    case "0":
+                        tempScore += 30;
+                        break;
+                    case "1":
+                        tempScore += 20;
+                        break;
+                    case "2":
+                        tempScore += 10;
+                        break;
+                    
+                }
+                var popX = enemyRows[r].enemies[e].sprite.x + enemyRows[r].enemies[e].sprite.width/2;
+                var popY = enemyRows[r].enemies[e].sprite.y;
+                addScorePopup(tempScore,popX,popY);
+                score += tempScore;
+                updateScore();
                 stage.removeChild(enemyRows[r].enemies[e].sprite);
                 console.log(enemyRows[r].enemies.splice(e, 1));
                 playerProjectiles.splice(bullet,1);
