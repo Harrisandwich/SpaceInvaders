@@ -226,7 +226,7 @@ function gameLoop()
     if (playerProjectiles.length > 0){
         for(var b in playerProjectiles)
         {
-            if (moveBullet(playerProjectiles[b])){
+            if (moveBullet(b, playerProjectiles)){
                 stage.removeChild(playerProjectiles[b]);
                 playerProjectiles.splice(b,1);
             }
@@ -379,16 +379,24 @@ function movePlayer(dir)
 /*
  * Returns true if bullet should be removed
  */
-function moveBullet(bullet){
+function moveBullet(bullet, playerProjectiles){
+    var bullet = playerProjectiles[bullet];
     bullet.y -= BULLET_BASE_SPEED;
     // If bullet is inside enemy. Destroy.
-    
-    /*enemyRows.enemies.forEach(function(enemy) {
-        if(hitTestRectangle(bullet, enemy)) {
-            console.log("Hit");
+    for(var r in enemyRows)
+    {
+        for(var e in enemyRows[r].enemies)
+        {
+            if(hitTestRectangle(bullet, enemyRows[r].enemies[e].sprite)) {
+                stage.removeChild(bullet);
+                stage.removeChild(enemyRows[r].enemies[e].sprite);
+                console.log(enemyRows[r].enemies.splice(e, 1));
+                playerProjectiles.splice(bullet,1);
+                return false;
+            }
+             
         }
-    });*/
-    
+    }
     
     if (bullet.y <= 0){
         return true;
