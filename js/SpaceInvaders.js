@@ -1,5 +1,5 @@
 
-
+var scale = 0;
 //pixi aliases
 var Container = PIXI.Container,
     autoDetectRenderer = PIXI.autoDetectRenderer,
@@ -11,6 +11,104 @@ var Container = PIXI.Container,
     hitTestRectangle = utils.hitTestRectangle,
     keyboard = utils.keyboard;
 
+var Bunker = function()
+{
+    var SQUARE_SIZE = 10 * scale;
+    var self = this;
+    var cells = [];
+     //create layout
+    var layout = {
+        rows:[{
+            cells:[0,0,1,1,1,1,1,1,1,1,0,0],
+        },
+        {
+            cells:[0,1,1,1,1,1,1,1,1,1,1,0],
+        },
+        {
+            cells:[1,1,1,1,1,1,1,1,1,1,1,1],
+        },
+        {
+            cells:[1,1,1,1,1,1,1,1,1,1,1,1],
+        },
+        {
+            cells:[1,1,1,0,0,0,0,0,0,1,1,1],
+        },
+        {
+            cells:[1,1,1,0,0,0,0,0,0,1,1,1],
+        },
+        {
+            cells:[1,1,1,0,0,0,0,0,0,1,1,1],
+        }]
+    }
+    self.width = SQUARE_SIZE * layout.rows[0].cells.length;
+    self.bunker = new Container();
+
+    init();
+    self.checkHit = function(bullet)
+    {
+        
+        for(var c in cells)
+        {
+            var gp = self.bunker.toGlobal(cells[c].position);
+            var cellGlobal = {
+                x: gp.x,
+                y: gp.y,
+                width:cells[c].width,
+                height:cells[c].height,
+
+            };
+            if(hitTestRectangle(cellGlobal,bullet))
+            {
+                cells[c].visible = false;
+                return true
+            }
+        }
+        return false
+        
+    }
+    self.cleanup = function()
+    {
+        for(var c in cells)
+        {
+            if(!cells[c].visible)
+            {
+                cells.splice(c,1);
+            }
+        }
+    }
+    self.getCells = function()
+    {
+        return cells;
+    }
+    function init()
+    {
+       
+        //create squares
+        for(var r in layout.rows)
+        {
+            var posY = r * SQUARE_SIZE;
+            for(var c in layout.rows[r].cells)
+            {
+                var posX = c * SQUARE_SIZE;
+                if(layout.rows[r].cells[c] == 1)
+                {
+                    var rect = new PIXI.Graphics();
+                    rect.beginFill(0xFFFFFF);
+                    rect.drawRect(0, 0, SQUARE_SIZE, SQUARE_SIZE);
+                    rect.endFill();
+                    rect.x = posX;
+                    rect.y = posY;
+                    self.bunker.addChild(rect);
+                    //push to array
+                    cells.push(rect);
+                    //add child
+                    
+                }
+            }
+        }
+
+    }
+}
 var Enemy = function(frameOneTexture,frameTwoTexture)
 {
     var self = this;
@@ -18,6 +116,7 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
     var dir = 8;
     self.sprite = new Container();
     self.sprite.addChild(frames[0],frames[1]);
+    self.sprite.scale.set(scale,scale);
     frames[1].visible = false;
     self.animate = function()
     {
@@ -65,13 +164,8 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
     
 }
 
-var screen = {
-    left: window.innerWidth,
-    top: 0,
-    right: 0,
-    bottom: window.innerHeight,
-}
-var renderer = new autoDetectRenderer(screen.left, screen.bottom);
+var screen = null;
+var renderer = null;
 var stage = new Container();
 var state = play;
 
@@ -83,6 +177,7 @@ var bunkers = [];
 var playerProjectiles = [];
 var enemyProjectiles = [];
 var enemyTextures = [];
+var bunkers = [];
 var player = null;
 var bullet = null;
 var leftPressed = false;
@@ -91,7 +186,9 @@ var enemyTimerStarted = false;
 var enemyTimer = null;
 var enemyAttackTimer = null;
 var direction = 0;
-
+var score = 0;
+var scoreLabel = null;
+var scoreText = null;
 var left = keyboard(37),
       up = keyboard(38),
       right = keyboard(39),
@@ -113,6 +210,9 @@ var ENEMY_PADDING = 20;
 var ROW_PADDING = 50;
 var SIZE_OF_ROW = 5;
 var ATTACK_RATE = 0.6;
+var NUM_BUNKERS = 3;
+var BUNKER_PADDING = 0;
+var BUNKER_HEIGHT = 0;
 var currentWave = 1;
 var enemySpeed = ENEMY_BASE_SPEED_MS;
 
@@ -124,11 +224,12 @@ function setup() {
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien2_0.png"].texture, PIXI.loader.resources["images/alien2_1.png"].texture]});
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien3_0.png"].texture, PIXI.loader.resources["images/alien3_1.png"].texture]});
     //change attack time to something more variable
-    enemyAttackTimer = setInterval(enemyAttack,3000);
+    enemyAttackTimer = setInterval(enemyAttack,500);
+    initBunkers();
     initAliens(currentWave);
     player = new PIXI.Sprite(PIXI.loader.resources["images/ship.png"].texture);
     
-    
+    player.scale.set(scale,scale);
     player.x = window.innerWidth/2 - player.width/2;
     player.y = window.innerHeight - player.height * 2;
     
@@ -148,15 +249,12 @@ function setup() {
     right.release = function() {rightPressed = false;};
     
     //Space
-    space.press = function() {
-        bullet = new PIXI.Sprite(PIXI.loader.resources["images/ship_bullet.png"].texture);
-        bullet.x = player.x;
-        bullet.y = player.y - 20;
-        playerProjectiles.push(bullet);
-        stage.addChild(playerProjectiles[playerProjectiles.length - 1]);
-    };
+    space.press = playerFire
     
     stage.addChild(player);
+
+    
+
     for(var r in enemyRows)
     {
         for(var e in enemyRows[r].enemies)
@@ -169,6 +267,32 @@ function setup() {
     gameLoop();
 }
 
+
+function showScore()
+{
+    //add score text to screen
+    scoreLabel = new PIXI.Text(
+        "Score:",
+    {font: "18px sans-serif", fill: "white"}
+    );
+    scoreText = new PIXI.Text(
+        "hello",
+        {font: "18px sans-serif", fill: "white"}
+    )
+    scoreLabel.position.set(54, 96);
+    scoretext.position.set(104, 96);
+    stage.addChild(scoreLabel);
+}
+
+function updateScore()
+{
+    //change score text
+}
+
+function gameOver()
+{
+    //Show gameOver text and button
+}
 //for game over
 function resetGame()
 {
@@ -214,7 +338,17 @@ function initAliens(wave)
 
     
 }
-
+function initBunkers()
+{
+    for(var i = 0; i < NUM_BUNKERS; i++)
+    {
+        var bunker = new Bunker();
+        bunker.bunker.y = BUNKER_HEIGHT;
+        bunker.bunker.x = (i * BUNKER_PADDING) + bunker.width/2;
+        bunkers.push(bunker);
+        stage.addChild(bunker.bunker);
+    }
+}
 function gameLoop()
 {
     requestAnimationFrame(gameLoop);
@@ -232,7 +366,7 @@ function gameLoop()
             }
         }
     }
-    
+
     state();
 
     renderer.render(stage);
@@ -242,6 +376,7 @@ function gameLoop()
 function animate()
 {
     animatePlayer();
+    animatePlayerProjectiles();
     animateEnemies();
     animateEnemyProjectiles();
 }
@@ -289,18 +424,60 @@ function animateEnemyProjectiles()
     
     //move each bullet down
     //if offscreen, kill bullet
-    for(var b in enemyProjectiles)
+    for(var p in enemyProjectiles)
     {
-        enemyProjectiles[b].y += ENEMY_PROJECTILE_SPEED;
-        if(enemyProjectiles[b].y > screen.bottom)
+        enemyProjectiles[p].y += ENEMY_PROJECTILE_SPEED;
+        
+        if(enemyProjectiles[p].y > screen.bottom)
         {
-            stage.removeChild(enemyProjectiles[b]);
-            enemyProjectiles.splice(b,1);
+            enemyProjectiles[p].visible = false;
+        }
+
+        for(var b in bunkers)
+        {
+            if(enemyProjectiles[p].visible && hitTestRectangle(bunkers[b].bunker,enemyProjectiles[p]))
+            {
+                 
+                if(bunkers[b].checkHit(enemyProjectiles[p]))
+                {
+                   enemyProjectiles[p].visible = false;
+                }
+            }
+
+            bunkers[b].cleanup();
+            
+        }
+    }
+    //clean up
+    for(var p in enemyProjectiles)
+    {
+        if(!enemyProjectiles[p].visible)
+        {
+            enemyProjectiles.splice(p,1);
         }
     }
 
 }
 
+function animatePlayerProjectiles()
+{
+    if (playerProjectiles.length > 0){
+        for(var b in playerProjectiles)
+        {
+            if (playerProjectiles[b].visible && moveBullet(playerProjectiles[b])){
+                playerProjectiles[b].visible = false;
+            }
+        }
+    }
+
+    //cleanup
+    for(var b in playerProjectiles)
+    {
+        if (!playerProjectiles[b].visible){
+            playerProjectiles.splice(b,1);
+        }
+    }
+}
 function enemyAttack()
 {
     //roll to fire
@@ -314,12 +491,24 @@ function enemyAttack()
         if(enemyRows[row].enemies[column] != null)
         {
             var bullet = enemyRows[row].enemies[column].fire();
+            
             stage.addChild(bullet);
             //store bullet into projectile array
             enemyProjectiles.push(bullet);
         }
     }
         
+}
+
+function playerFire()
+{
+    
+    bullet = new PIXI.Sprite(PIXI.loader.resources["images/ship_bullet.png"].texture);
+    bullet.x = player.x;
+    bullet.y = player.y - 20;
+    playerProjectiles.push(bullet);
+    stage.addChild(playerProjectiles[playerProjectiles.length - 1]);
+    
 }
 function dropEnemies()
 {
@@ -397,10 +586,23 @@ function moveBullet(bullet, playerProjectiles){
              
         }
     }
-    
+
+    for(var b in bunkers)
+    {
+        if(hitTestRectangle(bunkers[b].bunker,bullet))
+        {
+            if(bunkers[b].checkHit(bullet))
+            {
+                return true;
+            }
+        }
+    }
+
     if (bullet.y <= 0){
         return true;
     }
+
+    return false
 }
 
 function stopPlayerMovement()
@@ -415,8 +617,51 @@ function loadProgressHandler(loader, resource) {
   //Display the precentage of files currently loaded
   console.log("progress: " + loader.progress + "%"); 
 }
+var fireTimer = null;
+function movePlayerTouch(e)
+{
+    e.originalEvent.preventDefault();
+    player.x = e.originalEvent.touches[0].clientX;
+}
+
+function startPlayerTouch(e)
+{
+   
+    if(fireTimer == null)
+    {
+        fireTimer = setInterval(playerFire,500);
+    }
+}
+
+function endPlayerTouch(e)
+{
+    if(fireTimer != null)
+    {
+        clearInterval(fireTimer);
+        fireTimer = null;
+    }
+}
 
 $(document).ready(function(){
+
+    
+    scale = window.innerWidth/window.innerHeight;
+    if(scale > 1)
+    {
+        scale = 1;
+    }
+    screen = {
+    left: window.innerWidth,
+    top: 0,
+    right: 0,
+    bottom: window.innerHeight,
+    }
+
+    
+    
+    renderer = new autoDetectRenderer(screen.left, screen.bottom);
+    BUNKER_PADDING = (screen.left/3);
+    BUNKER_HEIGHT = screen.bottom - (screen.bottom/3);
 
     PIXI.loader
     .add("images/alien1_0.png")
@@ -431,9 +676,12 @@ $(document).ready(function(){
     .on("progress", loadProgressHandler)
     .load(setup);
     
-    
+    $(document).on("touchmove",movePlayerTouch);
+    $(document).on("touchend",endPlayerTouch);
+    $(document).on("touchstart",startPlayerTouch);
     document.body.appendChild(renderer.view);
     
 
     
 });
+
