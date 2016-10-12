@@ -568,8 +568,8 @@ function movePlayer(dir)
 /*
  * Returns true if bullet should be removed
  */
-function moveBullet(bullet, playerProjectiles){
-    var bullet = playerProjectiles[bullet];
+function moveBullet(bullet){
+    //var bullet = playerProjectiles[bullet];
     bullet.y -= BULLET_BASE_SPEED;
     // If bullet is inside enemy. Destroy.
     for(var r in enemyRows)
