@@ -113,27 +113,57 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
 {
     var self = this;
     var frames = [new Sprite(frameOneTexture),new Sprite(frameTwoTexture)];
+    var explosionFrames = [new Sprite(PIXI.loader.resources["images/death_1.png"].texture), new Sprite(PIXI.loader.resources["images/death_2.png"].texture), new Sprite(PIXI.loader.resources["images/death_3.png"].texture)];
     var dir = 8;
+    var exploded = false;
     self.sprite = new Container();
-    self.sprite.addChild(frames[0],frames[1]);
+    self.sprite.addChild(frames[0],frames[1], explosionFrames[0], explosionFrames[1], explosionFrames[2]);
     self.sprite.scale.set(scale,scale);
     frames[1].visible = false;
+    explosionFrames[0].visible = false;
+    explosionFrames[1].visible = false;
+    explosionFrames[2].visible = false;
     self.animate = function()
     {
-
-        self.sprite.x += dir;
-        for(var f in frames)
-        {
-            if(frames[f].visible)
+        if (!exploded){
+            self.sprite.x += dir;
+            for(var f in frames)
             {
-                frames[f].visible = false;
-            }
-            else
-            {
-                frames[f].visible = true;
+                if(frames[f].visible)
+                {
+                    frames[f].visible = false;
+                }
+                else
+                {
+                    frames[f].visible = true;
+                }
             }
         }
     };
+    
+    self.destruct = function(enemy, enemyArray){
+        exploded = true;
+        for(var f in frames)
+        {
+                frames[f].visible = false;
+        }
+        
+        var i = 0;
+        var explosionInterval = setInterval(function () {       
+            i++;
+            console.log(i);
+            if (i > -1){
+                explosionFrames[i - 1].visible = false;  
+            }               
+            if (i < explosionFrames.length) {        
+                explosionFrames[i].visible = true;        
+            }    
+            if (i > (explosionFrames.length - 1)){
+                clearInterval(explosionInterval);
+            }                
+        }, 100)
+
+    }
 
     self.drop = function()
     {
@@ -163,6 +193,7 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
 
     
 }
+
 
 var screen = null;
 var renderer = null;
@@ -736,8 +767,8 @@ function moveBullet(bullet){
                 addScorePopup(tempScore,popX,popY);
                 score += tempScore;
                 updateScore();
-                stage.removeChild(enemyRows[r].enemies[e].sprite);
-                console.log(enemyRows[r].enemies.splice(e, 1));
+                enemyRows[r].enemies[e].destruct();
+                enemyRows[r].enemies.splice(e, 1);
                 playerProjectiles.splice(bullet,1);
                 return false;
             }
@@ -842,6 +873,9 @@ $(document).ready(function(){
     .add("images/ship.png")
     .add("images/ship_bullet.png")
     .add("images/alien_bullet.png")
+    .add("images/death_1.png")
+    .add("images/death_2.png")
+    .add("images/death_3.png")
     .on("progress", loadProgressHandler)
     .load(setup);
     
