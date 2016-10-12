@@ -1,5 +1,5 @@
 
-
+var scale = 0;
 //pixi aliases
 var Container = PIXI.Container,
     autoDetectRenderer = PIXI.autoDetectRenderer,
@@ -13,7 +13,7 @@ var Container = PIXI.Container,
 
 var Bunker = function()
 {
-    var SQUARE_SIZE = 10;
+    var SQUARE_SIZE = 10 * scale;
     var self = this;
     var cells = [];
      //create layout
@@ -116,6 +116,7 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
     var dir = 8;
     self.sprite = new Container();
     self.sprite.addChild(frames[0],frames[1]);
+    self.sprite.scale.set(scale,scale);
     frames[1].visible = false;
     self.animate = function()
     {
@@ -226,7 +227,7 @@ function setup() {
     initAliens(currentWave);
     player = new PIXI.Sprite(PIXI.loader.resources["images/ship.png"].texture);
     
-    
+    player.scale.set(scale,scale);
     player.x = window.innerWidth/2 - player.width/2;
     player.y = window.innerHeight - player.height * 2;
     
@@ -249,6 +250,9 @@ function setup() {
     space.press = playerFire
     
     stage.addChild(player);
+
+    
+
     for(var r in enemyRows)
     {
         for(var e in enemyRows[r].enemies)
@@ -594,12 +598,21 @@ function endPlayerTouch(e)
 
 $(document).ready(function(){
 
+    
+    scale = window.innerWidth/window.innerHeight;
+    if(scale > 1)
+    {
+        scale = 1;
+    }
     screen = {
     left: window.innerWidth,
     top: 0,
     right: 0,
     bottom: window.innerHeight,
     }
+
+    
+    
     renderer = new autoDetectRenderer(screen.left, screen.bottom);
     BUNKER_PADDING = (screen.left/3);
     BUNKER_HEIGHT = screen.bottom - (screen.bottom/3);
