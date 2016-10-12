@@ -10,10 +10,12 @@ Space Invaders:
 - add enemy to stage *completed*
 - add shooting *completed*
 
-- kill enemies 
+- kill enemies *completed*
 - improve bullet tracking *completed*
 - enemy attack *completed*
 - bunkers *completed*
+- enemy death animations
+- fix enemy bullet storm
 - score
 - waves 
 - kill player
