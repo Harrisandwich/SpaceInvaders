@@ -16,8 +16,8 @@ Space Invaders:
 - bunkers *completed*
 - enemy death animations
 - fix enemy bullet storm
-- score
+- score *completed*
 - waves 
-- kill player
+- kill player *completed*
 - game over
 - start screen
