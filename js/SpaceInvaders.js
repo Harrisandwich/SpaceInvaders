@@ -258,7 +258,8 @@ function setup() {
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien2_0.png"].texture, PIXI.loader.resources["images/alien2_1.png"].texture]});
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien3_0.png"].texture, PIXI.loader.resources["images/alien3_1.png"].texture]});
     //change attack time to something more variable
-    enemyAttackTimer = setInterval(enemyAttack,500);
+    enemyAttackTimer = new utils.timer();
+    enemyAttackTimer.setInterval(enemyAttack,30);
     initBunkers();
     initAliens(currentWave);
     player = new PIXI.Sprite(PIXI.loader.resources["images/ship.png"].texture);
@@ -712,7 +713,7 @@ function shouldEnemyDrop()
 function play() {
     
     animate();
-    
+    enemyAttackTimer.tick();
     if (leftPressed || rightPressed){movePlayer(direction);}
 
     if (playerProjectiles.length > 0){
@@ -769,8 +770,7 @@ function moveBullet(bullet){
                 updateScore();
                 enemyRows[r].enemies[e].destruct();
                 enemyRows[r].enemies.splice(e, 1);
-                playerProjectiles.splice(bullet,1);
-                return false;
+                return true;
             }
              
         }
