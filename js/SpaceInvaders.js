@@ -217,6 +217,7 @@ var rightPressed = false;
 var enemyTimerStarted = false;
 var enemyTimer = null;
 var enemyAttackTimer = null;
+var bulletBufferTimer = null;
 var direction = 0;
 var score = 0;
 var scoreLabel = null;
@@ -233,13 +234,14 @@ var left = keyboard(37),
 
 //Numbers
 var NUMBER_OF_ENEMIES = 15;
-var ENEMY_BASE_SPEED_MS = 1000;
+var ENEMY_BASE_SPEED_MS = 500;
 var BULLET_BASE_SPEED = 10;
 var ENEMY_ROOT_POS = {
     x: 0,
     y: 0,
 }
-var ENEMY_PROJECTILE_SPEED = 10;
+var ENEMY_PROJECTILE_SPEED = 5;
+var BULLET_BUFFER_MAX = 10;
 var ENEMY_PADDING = 20;
 var ROW_PADDING = 50;
 var SIZE_OF_ROW = 5;
@@ -248,6 +250,7 @@ var NUM_BUNKERS = 3;
 var BUNKER_PADDING = 0;
 var BUNKER_HEIGHT = 0;
 var currentWave = 1;
+var bulletBuffer = BULLET_BUFFER_MAX;
 var enemySpeed = ENEMY_BASE_SPEED_MS;
 
 
@@ -260,6 +263,8 @@ function setup() {
     //change attack time to something more variable
     enemyAttackTimer = new utils.timer();
     enemyAttackTimer.setInterval(enemyAttack,30);
+    bulletBufferTimer = new utils.timer();
+    bulletBufferTimer.setInterval(cooldown,60);
     initBunkers();
     initAliens(currentWave);
     player = new PIXI.Sprite(PIXI.loader.resources["images/ship.png"].texture);
@@ -663,15 +668,27 @@ function enemyAttack()
     }
         
 }
-
+function cooldown()
+{
+    if(bulletBuffer < BULLET_BUFFER_MAX)
+    {
+        bulletBuffer += 1;
+    }
+    
+}
 function playerFire()
 {
+    if(bulletBuffer > 0)
+    {
+        bullet = new PIXI.Sprite(PIXI.loader.resources["images/ship_bullet.png"].texture);
+        bullet.x = player.x + player.width/2;
+        bullet.y = player.y;
+        playerProjectiles.push(bullet);
+        stage.addChild(playerProjectiles[playerProjectiles.length - 1]);
+        bulletBuffer -= 1;
+    }
     
-    bullet = new PIXI.Sprite(PIXI.loader.resources["images/ship_bullet.png"].texture);
-    bullet.x = player.x + player.width/2;
-    bullet.y = player.y;
-    playerProjectiles.push(bullet);
-    stage.addChild(playerProjectiles[playerProjectiles.length - 1]);
+    
     
 }
 function dropEnemies()
@@ -714,6 +731,7 @@ function play() {
     
     animate();
     enemyAttackTimer.tick();
+    bulletBufferTimer.tick();
     if (leftPressed || rightPressed){movePlayer(direction);}
 
     if (playerProjectiles.length > 0){
