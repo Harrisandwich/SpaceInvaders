@@ -384,9 +384,13 @@ function resetGame()
     //clear stage
     for (var i = stage.children.length - 1; i >= 0; i--) {	stage.removeChild(stage.children[i]);};
     //clear enemy timer 
+    bulletBuffer = 10;
     clearInterval(enemyTimer);
     //reset wave
     currentWave = 1;
+    //reset bunkers and enemies
+    enemyRows = [];
+    bunkers = [];
     //create bunkers
     initBunkers();
 
@@ -409,9 +413,7 @@ function resetGame()
     bulletBufferTimer = new utils.timer();
     bulletBufferTimer.setInterval(cooldown,60);
 
-    //reset bunkers and enemies
-    enemyRows = [];
-    bunkers = [];
+    
 
     for(var r in enemyRows)
     {
@@ -929,7 +931,11 @@ function startPlayerTouch(e)
 
 function endPlayerTouch(e)
 {
-    if(fireTimer != null)
+    if(state == gameOver)
+    {
+        resetGame();
+    }
+    else if(fireTimer != null)
     {
         clearInterval(fireTimer);
         fireTimer = null;
@@ -975,6 +981,7 @@ $(document).ready(function(){
     
     $(document).on("touchmove",movePlayerTouch);
     $(document).on("touchend",endPlayerTouch);
+    $(document).on("mouseup",endPlayerTouch);
     $(document).on("touchstart",startPlayerTouch);
     document.body.appendChild(renderer.view);
     
