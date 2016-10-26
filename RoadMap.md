@@ -20,7 +20,7 @@ Space Invaders:
 - waves *completed*
 - kill player *completed*
 - game over *completed*
-- leaderboard 
+- leaderboard shown on death
 - reset game after death
 - bullet buffer UI
 - start screen
