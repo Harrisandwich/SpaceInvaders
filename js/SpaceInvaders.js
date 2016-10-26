@@ -237,7 +237,7 @@ var left = keyboard(37),
 
 //Numbers
 var NUMBER_OF_ENEMIES = 15;
-var ENEMY_BASE_SPEED_MS = 500;
+var ENEMY_BASE_SPEED_MS = 10;
 var BULLET_BASE_SPEED = 10;
 var ENEMY_ROOT_POS = {
     x: 0,
@@ -775,10 +775,35 @@ function dropEnemies()
     {
         for(var e in enemyRows[r].enemies)
         {
-            
             enemyRows[r].enemies[e].drop();
+            // Check for end of game scenario
+            // If collision with bunker or too low on screen end game
+            if (enemyHitBunker(enemyRows[r].enemies[e].sprite) || enemyHitBottomOfScreen(enemyRows[r].enemies[e].sprite)){
+                setGameOver();
+            }
         }
     }
+}
+
+function enemyHitBunker(enemy){
+    for(var b in bunkers)
+    {
+        if(hitTestRectangle(bunkers[b].bunker,enemy))
+        {
+            if(bunkers[b].checkHit(enemy))
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function enemyHitBottomOfScreen(enemy){
+    if ((screen.bottom - 200) < enemy.y){
+        return true;
+    }
+    return false;
 }
 
 function shouldEnemyDrop()
