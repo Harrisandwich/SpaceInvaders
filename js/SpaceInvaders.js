@@ -237,7 +237,7 @@ var left = keyboard(37),
 
 //Numbers
 var NUMBER_OF_ENEMIES = 15;
-var ENEMY_BASE_SPEED_MS = 500;
+var ENEMY_BASE_SPEED_MS = 50;
 var BULLET_BASE_SPEED = 10;
 var ENEMY_ROOT_POS = {
     x: 0,
@@ -435,8 +435,6 @@ function resetGame()
                 
             }
         }
-        
-
     
         if(shouldEnemyDrop())
         {
@@ -775,11 +773,6 @@ function dropEnemies()
         for(var e in enemyRows[r].enemies)
         {
             enemyRows[r].enemies[e].drop();
-            // Check for end of game scenario
-            // If collision with bunker or too low on screen end game
-            if (enemyHitBunker(enemyRows[r].enemies[e].sprite) || enemyHitBottomOfScreen(enemyRows[r].enemies[e].sprite)){
-                setGameOver();
-            }
         }
     }
 }
@@ -799,7 +792,7 @@ function enemyHitBunker(enemy){
 }
 
 function enemyHitBottomOfScreen(enemy){
-    if ((screen.bottom - 200) < enemy.y){
+    if ((screen.bottom) < enemy.y){
         return true;
     }
     return false;
@@ -807,6 +800,21 @@ function enemyHitBottomOfScreen(enemy){
 
 function shouldEnemyDrop()
 {
+    for(var r in enemyRows)
+    {
+            for(var e in enemyRows[r].enemies)
+            {
+            // Check for end of game scenario
+            // If collision with bunker or too low on screen end game
+            if (enemyHitBunker(enemyRows[r].enemies[e].sprite)){
+                enemyRows[r].enemies[e].destruct();
+                enemyRows[r].enemies.splice(e, 1);
+            } else if (enemyHitBottomOfScreen(enemyRows[r].enemies[e].sprite)){
+                setGameOver();
+            }
+        }
+    }
+    
     for(var r in enemyRows)
     {
         for(var e in enemyRows[r].enemies)
