@@ -14,10 +14,13 @@ Space Invaders:
 - improve bullet tracking *completed*
 - enemy attack *completed*
 - bunkers *completed*
-- enemy death animations
-- fix enemy bullet storm
+- enemy death animations *completed*
+- fix enemy bullet storm *completed*
 - score *completed*
-- waves 
+- waves *completed*
 - kill player *completed*
-- game over
+- game over *completed*
+- leaderboard 
+- reset game after death
+- bullet buffer UI
 - start screen
