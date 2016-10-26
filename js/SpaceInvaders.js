@@ -197,7 +197,7 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
 
 var screen = null;
 var renderer = null;
-var stage = new Container();
+var stage = new PIXI.Stage(0x000000, true);
 var state = play;
 
 
@@ -218,6 +218,9 @@ var enemyTimerStarted = false;
 var enemyTimer = null;
 var enemyAttackTimer = null;
 var bulletBufferTimer = null;
+var resetGameButton = null;
+var resetGameText = null;
+var resetBox = null;
 var direction = 0;
 var score = 0;
 var scoreLabel = null;
@@ -234,7 +237,7 @@ var left = keyboard(37),
 
 //Numbers
 var NUMBER_OF_ENEMIES = 15;
-var ENEMY_BASE_SPEED_MS = 500;
+var ENEMY_BASE_SPEED_MS = 10;
 var BULLET_BASE_SPEED = 10;
 var ENEMY_ROOT_POS = {
     x: 0,
@@ -339,6 +342,11 @@ function updateScore()
     stage.addChild(scoreText);
 }
 
+function gameOver()
+{
+
+}
+
 function setGameOver()
 {
     //Show gameOver text and button
@@ -348,28 +356,98 @@ function setGameOver()
         "YOU DIED",
     {font: "32px sans-serif", fill: "white"}
     );
+
+    resetGameButton = new PIXI.Container();
+    resetGameText = new PIXI.Text(
+        "Reset",
+    {font: "32px sans-serif", fill: "white"}
+    );
+    resetBox = new PIXI.Graphics();
+    resetBox.lineStyle(4, 0xFFFFFF, 1);
+    resetBox.drawRoundedRect(0, 0, 100, 40, 10)
+    resetGameButton.addChild(resetBox);
+    resetGameButton.addChild(resetGameText);
+    resetGameText.x = resetGameButton.width/2 - resetGameText.width/2;
     
-    gameOverText.position.set(screen.left/2 - gameOverText.width/2, screen.bottom/2);
+    gameOverText.position.set(screen.left/2 - gameOverText.width/2, screen.bottom/3);
+    resetGameButton.position.set(screen.left/2 - resetGameButton.width/2, screen.bottom/3 + (resetGameButton.height * 2));
+    resetGameButton.mousedown = resetGame;
+    resetGameButton.tap = resetGame; 
     stage.addChild(gameOverText);
+    stage.addChild(resetGameButton);
 }
 
-function gameOver()
-{
-    //do sum shit
-    //detect a click ya anus
-    
-}
-//for game over
+
 function resetGame()
 {
 
+    //clear stage
+    for (var i = stage.children.length - 1; i >= 0; i--) {	stage.removeChild(stage.children[i]);};
+    //clear enemy timer 
+    bulletBuffer = 10;
+    clearInterval(enemyTimer);
+    //reset wave
+    currentWave = 1;
+    //reset bunkers and enemies
+    enemyRows = [];
+    bunkers = [];
+    //create bunkers
+    initBunkers();
 
-    /*
-        - create player
-        - create enemies
-        - create bunkers 
-        - assign keys
-    */
+    //create aliens
+    initAliens(currentWave);
+
+    //reset score
+    score = 0;
+    showScore();
+    updateScore();
+
+    stage.addChild(player);
+    //reset player position
+    player.x = window.innerWidth/2 - player.width/2;
+    player.y = window.innerHeight - player.height * 2;
+
+    //reset timers
+    enemyAttackTimer = new utils.timer();
+    enemyAttackTimer.setInterval(enemyAttack,30);
+    bulletBufferTimer = new utils.timer();
+    bulletBufferTimer.setInterval(cooldown,60);
+
+    
+
+    for(var r in enemyRows)
+    {
+        for(var e in enemyRows[r].enemies)
+        {
+            stage.addChild(enemyRows[r].enemies[e].sprite);
+        }
+    }
+
+    enemyTimer = setInterval(function()
+    {
+            //find visible enemy farthest left and farthest right
+        var drop = 0;
+        var dropping = false;
+        for(var r in enemyRows)
+        {
+            for(var e in enemyRows[r].enemies)
+            {
+                enemyRows[r].enemies[e].animate();
+                
+            }
+        }
+        
+
+    
+        if(shouldEnemyDrop())
+        {
+            dropEnemies();
+        }
+
+    },enemySpeed);
+
+
+     state = play;
 
 }
 
@@ -697,10 +775,35 @@ function dropEnemies()
     {
         for(var e in enemyRows[r].enemies)
         {
-            
             enemyRows[r].enemies[e].drop();
+            // Check for end of game scenario
+            // If collision with bunker or too low on screen end game
+            if (enemyHitBunker(enemyRows[r].enemies[e].sprite) || enemyHitBottomOfScreen(enemyRows[r].enemies[e].sprite)){
+                setGameOver();
+            }
         }
     }
+}
+
+function enemyHitBunker(enemy){
+    for(var b in bunkers)
+    {
+        if(hitTestRectangle(bunkers[b].bunker,enemy))
+        {
+            if(bunkers[b].checkHit(enemy))
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function enemyHitBottomOfScreen(enemy){
+    if ((screen.bottom - 200) < enemy.y){
+        return true;
+    }
+    return false;
 }
 
 function shouldEnemyDrop()
@@ -853,7 +956,11 @@ function startPlayerTouch(e)
 
 function endPlayerTouch(e)
 {
-    if(fireTimer != null)
+    if(state == gameOver)
+    {
+        resetGame();
+    }
+    else if(fireTimer != null)
     {
         clearInterval(fireTimer);
         fireTimer = null;
@@ -899,6 +1006,7 @@ $(document).ready(function(){
     
     $(document).on("touchmove",movePlayerTouch);
     $(document).on("touchend",endPlayerTouch);
+    $(document).on("mouseup",endPlayerTouch);
     $(document).on("touchstart",startPlayerTouch);
     document.body.appendChild(renderer.view);
     
