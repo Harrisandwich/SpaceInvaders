@@ -113,27 +113,57 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
 {
     var self = this;
     var frames = [new Sprite(frameOneTexture),new Sprite(frameTwoTexture)];
+    var explosionFrames = [new Sprite(PIXI.loader.resources["images/death_1.png"].texture), new Sprite(PIXI.loader.resources["images/death_2.png"].texture), new Sprite(PIXI.loader.resources["images/death_3.png"].texture)];
     var dir = 8;
+    var exploded = false;
     self.sprite = new Container();
-    self.sprite.addChild(frames[0],frames[1]);
+    self.sprite.addChild(frames[0],frames[1], explosionFrames[0], explosionFrames[1], explosionFrames[2]);
     self.sprite.scale.set(scale,scale);
     frames[1].visible = false;
+    explosionFrames[0].visible = false;
+    explosionFrames[1].visible = false;
+    explosionFrames[2].visible = false;
     self.animate = function()
     {
-
-        self.sprite.x += dir;
-        for(var f in frames)
-        {
-            if(frames[f].visible)
+        if (!exploded){
+            self.sprite.x += dir;
+            for(var f in frames)
             {
-                frames[f].visible = false;
-            }
-            else
-            {
-                frames[f].visible = true;
+                if(frames[f].visible)
+                {
+                    frames[f].visible = false;
+                }
+                else
+                {
+                    frames[f].visible = true;
+                }
             }
         }
     };
+    
+    self.destruct = function(enemy, enemyArray){
+        exploded = true;
+        for(var f in frames)
+        {
+                frames[f].visible = false;
+        }
+        
+        var i = 0;
+        var explosionInterval = setInterval(function () {       
+            i++;
+            console.log(i);
+            if (i > -1){
+                explosionFrames[i - 1].visible = false;  
+            }               
+            if (i < explosionFrames.length) {        
+                explosionFrames[i].visible = true;        
+            }    
+            if (i > (explosionFrames.length - 1)){
+                clearInterval(explosionInterval);
+            }                
+        }, 100)
+
+    }
 
     self.drop = function()
     {
@@ -155,14 +185,15 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
     {
         //create bullet
         var bullet = new Sprite(PIXI.loader.resources["images/alien_bullet.png"].texture);
-        bullet.x = self.sprite.x;
-        bullet.y = self.sprite.y;
+        bullet.x = self.sprite.x + self.sprite.width/2;
+        bullet.y = self.sprite.y + self.sprite.height;
         return bullet
     }
 
 
     
 }
+
 
 var screen = null;
 var renderer = null;
@@ -178,6 +209,7 @@ var playerProjectiles = [];
 var enemyProjectiles = [];
 var enemyTextures = [];
 var bunkers = [];
+var scorePopups = [];
 var player = null;
 var bullet = null;
 var leftPressed = false;
@@ -185,10 +217,13 @@ var rightPressed = false;
 var enemyTimerStarted = false;
 var enemyTimer = null;
 var enemyAttackTimer = null;
+var bulletBufferTimer = null;
 var direction = 0;
 var score = 0;
 var scoreLabel = null;
 var scoreText = null;
+var newWaveText = null;
+var newWaveStart = false;
 var left = keyboard(37),
       up = keyboard(38),
       right = keyboard(39),
@@ -199,13 +234,14 @@ var left = keyboard(37),
 
 //Numbers
 var NUMBER_OF_ENEMIES = 15;
-var ENEMY_BASE_SPEED_MS = 1000;
+var ENEMY_BASE_SPEED_MS = 500;
 var BULLET_BASE_SPEED = 10;
 var ENEMY_ROOT_POS = {
     x: 0,
     y: 0,
 }
-var ENEMY_PROJECTILE_SPEED = 10;
+var ENEMY_PROJECTILE_SPEED = 5;
+var BULLET_BUFFER_MAX = 10;
 var ENEMY_PADDING = 20;
 var ROW_PADDING = 50;
 var SIZE_OF_ROW = 5;
@@ -214,6 +250,7 @@ var NUM_BUNKERS = 3;
 var BUNKER_PADDING = 0;
 var BUNKER_HEIGHT = 0;
 var currentWave = 1;
+var bulletBuffer = BULLET_BUFFER_MAX;
 var enemySpeed = ENEMY_BASE_SPEED_MS;
 
 
@@ -224,7 +261,10 @@ function setup() {
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien2_0.png"].texture, PIXI.loader.resources["images/alien2_1.png"].texture]});
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien3_0.png"].texture, PIXI.loader.resources["images/alien3_1.png"].texture]});
     //change attack time to something more variable
-    enemyAttackTimer = setInterval(enemyAttack,500);
+    enemyAttackTimer = new utils.timer();
+    enemyAttackTimer.setInterval(enemyAttack,30);
+    bulletBufferTimer = new utils.timer();
+    bulletBufferTimer.setInterval(cooldown,60);
     initBunkers();
     initAliens(currentWave);
     player = new PIXI.Sprite(PIXI.loader.resources["images/ship.png"].texture);
@@ -263,7 +303,7 @@ function setup() {
         }
     }
     renderer.render(stage);
-    
+    showScore();
     gameLoop();
 }
 
@@ -276,22 +316,48 @@ function showScore()
     {font: "18px sans-serif", fill: "white"}
     );
     scoreText = new PIXI.Text(
-        "hello",
+        score.toString(),
         {font: "18px sans-serif", fill: "white"}
-    )
-    scoreLabel.position.set(54, 96);
-    scoretext.position.set(104, 96);
+    );
+
+    scoreLabel.position.set(10, 10);
+    scoreText.position.set(75, 10);
     stage.addChild(scoreLabel);
+    stage.addChild(scoreText);
 }
 
 function updateScore()
 {
     //change score text
+    stage.removeChild(scoreText);
+    scoreText = new PIXI.Text(
+        score,
+        {font: "18px sans-serif", fill: "white"}
+    );
+    scoreText.position.set(75, 10);
+    stage.addChild(scoreLabel);
+    stage.addChild(scoreText);
+}
+
+function setGameOver()
+{
+    //Show gameOver text and button
+    clearInterval(enemyTimer);
+    state = gameOver;
+    gameOverText = new PIXI.Text(
+        "YOU DIED",
+    {font: "32px sans-serif", fill: "white"}
+    );
+    
+    gameOverText.position.set(screen.left/2 - gameOverText.width/2, screen.bottom/2);
+    stage.addChild(gameOverText);
 }
 
 function gameOver()
 {
-    //Show gameOver text and button
+    //do sum shit
+    //detect a click ya anus
+    
 }
 //for game over
 function resetGame()
@@ -309,14 +375,57 @@ function resetGame()
 
 function changeLevel()
 {
+    clearInterval(enemyTimer);
+    enemyTimer = null;
     currentWave++;
+    showNewWaveText(currentWave);
     initAliens(currentWave);
+    for(var r in enemyRows)
+    {
+        for(var e in enemyRows[r].enemies)
+        {
+            stage.addChild(enemyRows[r].enemies[e].sprite);
+        }
+    }
+    enemyTimer = setInterval(function()
+    {
+            //find visible enemy farthest left and farthest right
+        var drop = 0;
+        var dropping = false;
+        for(var r in enemyRows)
+        {
+            for(var e in enemyRows[r].enemies)
+            {
+                enemyRows[r].enemies[e].animate();
+                
+            }
+        }
+        
+
+    
+        if(shouldEnemyDrop())
+        {
+            dropEnemies();
+        }
+
+    },enemySpeed);
 }
 
+function showNewWaveText(wave) 
+{
+    newWaveStart = true;
+    newWaveText = new PIXI.Text(
+        "Wave " + wave.toString(),
+        {font: "32px sans-serif", fill: "white"}
+    );
+    newWaveText.position.set(screen.left/2 - newWaveText.width/2, screen.bottom/2);
+    stage.addChild(newWaveText);
+    
+}
 function initAliens(wave)
 {
     enemySpeed = ENEMY_BASE_SPEED_MS/wave;
-    
+    enemyRows = [];
     for(var i = 0; i < NUMBER_OF_ENEMIES/SIZE_OF_ROW; i++)
     {
         var row = {
@@ -360,13 +469,13 @@ function gameLoop()
     if (playerProjectiles.length > 0){
         for(var b in playerProjectiles)
         {
-            if (moveBullet(b, playerProjectiles)){
+            if (moveBullet(b)){
                 stage.removeChild(playerProjectiles[b]);
                 playerProjectiles.splice(b,1);
             }
         }
     }
-
+    
     state();
 
     renderer.render(stage);
@@ -379,6 +488,11 @@ function animate()
     animatePlayerProjectiles();
     animateEnemies();
     animateEnemyProjectiles();
+    animateScorePopups()
+    if(newWaveStart)
+    {
+        animateNewWaveText();
+    }
 }
 
 function animatePlayer()
@@ -412,7 +526,7 @@ function animateEnemies()
                 dropEnemies();
             }
 
-        },200);
+        },enemySpeed);
         
 
         //if they are near the edge, drop all.
@@ -445,10 +559,23 @@ function animateEnemyProjectiles()
             }
 
             bunkers[b].cleanup();
-            
         }
+        
+        if(hitTestRectangle(player, enemyProjectiles[p])) {
+            stage.removeChild(player.sprite);
+            stage.removeChild(player);
+            enemyProjectiles[p].visible = false;
+        }
+        if(hitTestRectangle(player, enemyProjectiles[p])) {
+            stage.removeChild(player.sprite);
+            stage.removeChild(player);
+            enemyProjectiles[p].visible = false;
+            setGameOver();
+        }
+
     }
-    //clean up
+    
+    
     for(var p in enemyProjectiles)
     {
         if(!enemyProjectiles[p].visible)
@@ -478,6 +605,48 @@ function animatePlayerProjectiles()
         }
     }
 }
+
+function animateNewWaveText()
+{
+    newWaveText.y -= 1;
+    newWaveText.alpha -= 0.01;
+
+    if(newWaveText.alpha <= 0)
+    {
+        newWaveStart = false;
+        stage.removeChild(newWaveText);
+    }
+}
+function animateScorePopups()
+{
+    /*
+        - appears
+        - floats up and fades
+        - at max fade, remove
+
+    */
+    for(var i in scorePopups)
+    {
+        scorePopups[i].alpha -= 0.01;
+        scorePopups[i].y -= 0.5;
+        if(scorePopups[i].alpha <= 0)
+        {
+            stage.removeChild(scorePopups[i]);
+            scorePopups.splice(i,1);
+        }
+    }
+}
+
+function addScorePopup(score, posX, posY)
+{
+    var popupText = new PIXI.Text(
+        score.toString(),
+        {font: "12px sans-serif", fill: "white"}
+    );
+    popupText.position.set(posX, posY);
+    scorePopups.push(popupText);
+    stage.addChild(popupText);
+}
 function enemyAttack()
 {
     //roll to fire
@@ -499,15 +668,27 @@ function enemyAttack()
     }
         
 }
-
+function cooldown()
+{
+    if(bulletBuffer < BULLET_BUFFER_MAX)
+    {
+        bulletBuffer += 1;
+    }
+    
+}
 function playerFire()
 {
+    if(bulletBuffer > 0)
+    {
+        bullet = new PIXI.Sprite(PIXI.loader.resources["images/ship_bullet.png"].texture);
+        bullet.x = player.x + player.width/2;
+        bullet.y = player.y;
+        playerProjectiles.push(bullet);
+        stage.addChild(playerProjectiles[playerProjectiles.length - 1]);
+        bulletBuffer -= 1;
+    }
     
-    bullet = new PIXI.Sprite(PIXI.loader.resources["images/ship_bullet.png"].texture);
-    bullet.x = player.x;
-    bullet.y = player.y - 20;
-    playerProjectiles.push(bullet);
-    stage.addChild(playerProjectiles[playerProjectiles.length - 1]);
+    
     
 }
 function dropEnemies()
@@ -547,13 +728,22 @@ function shouldEnemyDrop()
 }
 
 function play() {
-    /*
-        - player can move 
-        - player can shoot
-        - enemies move side to side on timer
-        - enemies move down at interval
-        - enemy move timer decreases in time as more enemies are killed 
-    */
+    
+    animate();
+    enemyAttackTimer.tick();
+    bulletBufferTimer.tick();
+    if (leftPressed || rightPressed){movePlayer(direction);}
+
+    if (playerProjectiles.length > 0){
+        for(var b in playerProjectiles)
+        {
+            if (moveBullet(b, playerProjectiles)){
+                stage.removeChild(playerProjectiles[b]);
+                playerProjectiles.splice(b,1);
+            }
+        }
+    }
+    checkWaveOver();
     
 }
 
@@ -569,7 +759,6 @@ function movePlayer(dir)
  * Returns true if bullet should be removed
  */
 function moveBullet(bullet){
-    //var bullet = playerProjectiles[bullet];
     bullet.y -= BULLET_BASE_SPEED;
     // If bullet is inside enemy. Destroy.
     for(var r in enemyRows)
@@ -578,15 +767,33 @@ function moveBullet(bullet){
         {
             if(hitTestRectangle(bullet, enemyRows[r].enemies[e].sprite)) {
                 stage.removeChild(bullet);
-                stage.removeChild(enemyRows[r].enemies[e].sprite);
-                console.log(enemyRows[r].enemies.splice(e, 1));
-                playerProjectiles.splice(bullet,1);
-                return false;
+                var tempScore = 0;
+                switch(r)
+                {
+                    case "0":
+                        tempScore += 30;
+                        break;
+                    case "1":
+                        tempScore += 20;
+                        break;
+                    case "2":
+                        tempScore += 10;
+                        break;
+                    
+                }
+                var popX = enemyRows[r].enemies[e].sprite.x + enemyRows[r].enemies[e].sprite.width/2;
+                var popY = enemyRows[r].enemies[e].sprite.y;
+                addScorePopup(tempScore,popX,popY);
+                score += tempScore;
+                updateScore();
+                enemyRows[r].enemies[e].destruct();
+                enemyRows[r].enemies.splice(e, 1);
+                return true;
             }
              
         }
     }
-
+    
     for(var b in bunkers)
     {
         if(hitTestRectangle(bunkers[b].bunker,bullet))
@@ -604,10 +811,21 @@ function moveBullet(bullet){
 
     return false
 }
-
-function stopPlayerMovement()
+function checkWaveOver()
 {
-    
+    var deadCount = 0;
+    for(var r in enemyRows)
+    {
+        if(enemyRows[r].enemies.length == 0)
+        {
+            deadCount++;
+        }
+    }
+
+    if(deadCount == Math.round(NUMBER_OF_ENEMIES/SIZE_OF_ROW))
+    {
+        changeLevel();
+    }
 }
 
 function loadProgressHandler(loader, resource) {
@@ -673,6 +891,9 @@ $(document).ready(function(){
     .add("images/ship.png")
     .add("images/ship_bullet.png")
     .add("images/alien_bullet.png")
+    .add("images/death_1.png")
+    .add("images/death_2.png")
+    .add("images/death_3.png")
     .on("progress", loadProgressHandler)
     .load(setup);
     

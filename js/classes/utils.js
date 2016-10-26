@@ -88,5 +88,26 @@ var utils =
             "keyup", key.upHandler.bind(key), false
         );
         return key;
+    },
+
+    timer: function(){
+        var self = this;
+        var counter = 0;
+        var callback = null;
+        var thresh = 0;
+        self.tick = function()
+        {
+            counter++;
+            if(counter >= thresh)
+            {
+                callback();
+                counter = 0;
+            }
+        }
+        self.setInterval = function(call, lim)
+        {
+            callback = call;
+            thresh = lim;
+        }
     }
 }
