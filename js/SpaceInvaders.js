@@ -237,7 +237,7 @@ var left = keyboard(37),
 
 //Numbers
 var NUMBER_OF_ENEMIES = 15;
-var ENEMY_BASE_SPEED_MS = 10;
+var ENEMY_BASE_SPEED_MS = 500;
 var BULLET_BASE_SPEED = 10;
 var ENEMY_ROOT_POS = {
     x: 0,
@@ -400,7 +400,6 @@ function resetGame()
     //reset score
     score = 0;
     showScore();
-    updateScore();
 
     stage.addChild(player);
     //reset player position
