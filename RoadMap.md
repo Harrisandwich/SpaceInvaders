@@ -20,17 +20,20 @@ Space Invaders:
 - waves *completed*
 - kill player *completed*
 - game over *completed*
+- aliens explode on bunkers *completed*
+- Game over when aliens get passed screen bottom *completed*
+- reset game after death *completed*
+- leader board
+- start screen
+- bullet buffer indicator
+- player ship death animation 
 
 
 *Grant*
-- aliens explode on bunkers
-- Game over when aliens get passed screen bottom
+
 
 *Harrison*
-- leaderboard shown on death
-- reset game after death
+
 
 *Andrew*
-- bullet buffer UI
 
-- start screen
