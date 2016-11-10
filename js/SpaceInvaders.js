@@ -221,7 +221,8 @@ var Player = function()
     var self = this;
     var texture = new PIXI.Sprite(PIXI.loader.resources["images/ship.png"].texture);
     var explosionFrames = [new Sprite(PIXI.loader.resources["images/ship_death_1.png"].texture), new Sprite(PIXI.loader.resources["images/ship_death_2.png"].texture), new Sprite(PIXI.loader.resources["images/ship_death_3.png"].texture)];
-
+    var bufferMeter = new PIXI.Sprite(PIXI.loader.resources["images/buffer_meter.png"].texture);
+    var meterHeight = 0;
     var exploded = false;
     var leftPressed = false;
     var rightPressed = false;
@@ -232,24 +233,24 @@ var Player = function()
       space = keyboard(32);
     var direction = 0;
     var movementSpeed = PLAYER_MOVEMENT_SPEED;
-    var bufferIndicator = new PIXI.Graphics();
-    bufferIndicator.beginFill(0x66CCFF);
-    bufferIndicator.drawRect(0, 0, 12, 32);
-    bufferIndicator.endFill();
-    bufferIndicator.x = texture.width/2 - bufferIndicator.width/2
-    bufferIndicator.y = texture.height/2;
+    var bufferTint = {
+        red: 0,
+        green: 255,
+        blue: 0,
+    }
     
     
     self.projectiles = [];
     self.bulletBuffer = BULLET_BUFFER_MAX;
     self.sprite = new Container();
-    self.sprite.addChild(bufferIndicator,texture, explosionFrames[0], explosionFrames[1], explosionFrames[2]);
+    self.sprite.addChild(bufferMeter,texture, explosionFrames[0], explosionFrames[1], explosionFrames[2]);
     self.sprite.scale.set(scale,scale);
 
     
     texture.visible = true;
-    bufferIndicator.visible = true;
-
+    bufferMeter.visible = true;
+   bufferMeter.tint = PIXI.utils.rgb2hex(bufferTint.red,bufferTint.green,bufferTint.blue);
+    
     for(var f in explosionFrames)
     {
         explosionFrames[f].visible = false;
@@ -288,6 +289,10 @@ var Player = function()
         if(self.bulletBuffer < BULLET_BUFFER_MAX)
         {
             self.bulletBuffer += 1;
+            bufferTint.red -= Math.floor(255/BULLET_BUFFER_MAX);
+            bufferTint.green += Math.floor(255/BULLET_BUFFER_MAX);
+            bufferMeter.tint = PIXI.utils.rgb2hex(bufferTint.red,bufferTint.green,bufferTint.blue);
+            
         }
         
     }
@@ -296,7 +301,7 @@ var Player = function()
     {
         exploded = true;
         texture.visible = false;
-        bufferIndicator.visible = false;
+        bufferMeter.visible = false;
         var i = 0;
         var explosionInterval = setInterval(function () {       
             i++;
@@ -323,6 +328,13 @@ var Player = function()
             self.projectiles.push(bullet);
             stage.addChild(self.projectiles[self.projectiles.length - 1]);
             self.bulletBuffer -= 1;
+
+            bufferTint.red += Math.floor(255/BULLET_BUFFER_MAX);
+            bufferTint.green -= Math.floor(255/BULLET_BUFFER_MAX);
+           bufferMeter.tint = PIXI.utils.rgb2hex(bufferTint.red,bufferTint.green,bufferTint.blue);
+            
+            
+            //bufferMeter.height = meterHeight * (self.bulletBuffer/10);
         }
         
     }
