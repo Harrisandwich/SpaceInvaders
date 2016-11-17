@@ -3,7 +3,7 @@ var scale = 0;
 
 //Numbers
 var NUMBER_OF_ENEMIES = 15;
-var ENEMY_BASE_SPEED_MS = 50;
+var ENEMY_BASE_SPEED_MS = 1000;
 var BULLET_BASE_SPEED = 10;
 var BULLET_BUFFER_MAX = 10;
 var ENEMY_ROOT_POS = {
@@ -209,6 +209,7 @@ var Enemy = function(frameOneTexture,frameTwoTexture)
         var bullet = new Sprite(PIXI.loader.resources["images/alien_bullet.png"].texture);
         bullet.x = self.sprite.x + self.sprite.width/2;
         bullet.y = self.sprite.y + self.sprite.height;
+        bullet.scale.set(scale,scale);
         return bullet
     }
 
@@ -325,6 +326,7 @@ var Player = function()
             bullet = new PIXI.Sprite(PIXI.loader.resources["images/ship_bullet.png"].texture);
             bullet.x = self.sprite.x + self.sprite.width/2;
             bullet.y = self.sprite.y;
+             bullet.scale.set(scale,scale);
             self.projectiles.push(bullet);
             stage.addChild(self.projectiles[self.projectiles.length - 1]);
             self.bulletBuffer -= 1;

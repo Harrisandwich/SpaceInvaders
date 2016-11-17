@@ -23,10 +23,15 @@ Space Invaders:
 - aliens explode on bunkers *completed*
 - Game over when aliens get passed screen bottom *completed*
 - reset game after death *completed*
+- bullet buffer indicator *complete*
+- player ship death animation *complete*
 - leader board
 - start screen
-- bullet buffer indicator
-- player ship death animation 
+- pause
+- music
+
+
+
 
 
 *Grant*
