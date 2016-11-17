@@ -365,9 +365,7 @@ var enemyTimerStarted = false;
 var enemyTimer = null;
 var enemyAttackTimer = null;
 var bulletBufferTimer = null;
-var resetGameButton = null;
-var resetGameText = null;
-var resetBox = null;
+
 
 var score = 0;
 var scoreLabel = null;
@@ -375,46 +373,51 @@ var scoreText = null;
 var newWaveText = null;
 var newWaveStart = false;
 
+//buttons 
+var restartGameButton = null;
+var leaderboardButton = null;
+var startGameButton = null;
+
+//logo 
+var logo = null;
+
 
 //loader.add("/images").load(resetGame);
 
 
+function setup(){
+    logo = new PIXI.Sprite(PIXI.loader.resources["images/logo.png"].texture);
 
-
-function setup() {
-    
-    
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien1_0.png"].texture, PIXI.loader.resources["images/alien1_1.png"].texture]});
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien2_0.png"].texture, PIXI.loader.resources["images/alien2_1.png"].texture]});
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien3_0.png"].texture, PIXI.loader.resources["images/alien3_1.png"].texture]});
-    //change attack time to something more variable
-    enemyAttackTimer = new utils.timer();
-    enemyAttackTimer.setInterval(enemyAttack,30);
-    
-    initBunkers();
-    initAliens(currentWave);
-    player = new Player();
-    
-    bulletBufferTimer = new utils.timer();
-    bulletBufferTimer.setInterval(player.cooldown,60);
-   
-    
-    stage.addChild(player.sprite);
-    player.init();
-    player.sprite.x = window.innerWidth/2 - player.sprite.width/2;
-    player.sprite.y = window.innerHeight - player.sprite.height * 2;
 
-    for(var r in enemyRows)
-    {
-        for(var e in enemyRows[r].enemies)
-        {
-            stage.addChild(enemyRows[r].enemies[e].sprite);
-        }
-    }
-    renderer.render(stage);
-    showScore();
+    restartGameButton = new PIXI.Sprite(PIXI.loader.resources["images/btn_restart.png"].texture);
+    startGameButton = new PIXI.Sprite(PIXI.loader.resources["images/btn_start_game.png"].texture);
+    leaderboardButton = new PIXI.Sprite(PIXI.loader.resources["images/btn_leaderboard.png"].texture);
+
+
+    startGameButton.interactive = true;
+    restartGameButton.interactive = true;
+    leaderboardButton.interactive = true;
+
+    startGameButton.tap = resetGame;
+    startGameButton.mousedown = resetGame;
+    //leaderboardButton.tap = showLeaderboard;
+    //leaderboardButton.mousedown = showLeaderboard;
+
+    logo.position.set(screen.left/2 - logo.width/2, screen.top + screen.bottom/1000);
+    startGameButton.position.set(screen.left/2 - logo.width/2, logo.y + logo.height + startGameButton.height);
+    leaderboardButton.position.set(screen.left/2 - logo.width/2, startGameButton.y + startGameButton.height + leaderboardButton.height);
+    stage.addChild(logo);
+    stage.addChild(startGameButton);
+    stage.addChild(leaderboardButton);
+
+    state = mainMenu;
     gameLoop();
 }
+
+
 
 
 function showScore()
@@ -453,34 +456,49 @@ function gameOver()
 
 }
 
+function play() 
+{
+
+    animate();
+    enemyAttackTimer.tick();
+    bulletBufferTimer.tick();
+
+    if (player.projectiles.length > 0){
+        for(var b in player.projectiles)
+        {
+            if (moveBullet(b, player.projectiles)){
+                stage.removeChild(player.projectiles[b]);
+                player.projectiles.splice(b,1);
+            }
+        }
+    }
+    checkWaveOver();
+    
+}
+
+function mainMenu()
+{
+
+}
 function setGameOver()
 {
     //Show gameOver text and button
     clearInterval(enemyTimer);
+    enemyTimerStarted = false;
     state = gameOver;
     gameOverText = new PIXI.Text(
         "YOU DIED",
     {font: "32px sans-serif", fill: "white"}
     );
 
-    resetGameButton = new PIXI.Container();
-    resetGameText = new PIXI.Text(
-        "Reset",
-    {font: "32px sans-serif", fill: "white"}
-    );
-    resetBox = new PIXI.Graphics();
-    resetBox.lineStyle(4, 0xFFFFFF, 1);
-    resetBox.drawRoundedRect(0, 0, 100, 40, 10)
-    resetGameButton.addChild(resetBox);
-    resetGameButton.addChild(resetGameText);
-    resetGameText.x = resetGameButton.width/2 - resetGameText.width/2;
+    
     
     gameOverText.position.set(screen.left/2 - gameOverText.width/2, screen.bottom/3);
-    resetGameButton.position.set(screen.left/2 - resetGameButton.width/2, screen.bottom/3 + (resetGameButton.height * 2));
-    resetGameButton.mousedown = resetGame;
-    resetGameButton.tap = resetGame; 
+    restartGameButton.position.set(screen.left/2 - restartGameButton.width/2, screen.bottom/3 + (restartGameButton.height * 2));
+    restartGameButton.mousedown = resetGame;
+    restartGameButton.tap = resetGame; 
+    stage.addChild(restartGameButton);
     stage.addChild(gameOverText);
-    stage.addChild(resetGameButton);
 }
 
 
@@ -553,7 +571,7 @@ function resetGame()
 
     },enemySpeed);
 
-
+    enemyTimerStarted = true;
      state = play;
 
 }
@@ -647,17 +665,7 @@ function gameLoop()
 {
     requestAnimationFrame(gameLoop);
 
-    animate();
-
-    if (player.projectiles.length > 0){
-        for(var b in player.projectiles)
-        {
-            if (moveBullet(b)){
-                stage.removeChild(player.projectiles[b]);
-                player.projectiles.splice(b,1);
-            }
-        }
-    }
+    
     
     state();
 
@@ -917,29 +925,6 @@ function shouldEnemyDrop()
     return false
 }
 
-function play() {
-    
-    animate();
-    enemyAttackTimer.tick();
-    bulletBufferTimer.tick();
-
-    if (player.projectiles.length > 0){
-        for(var b in player.projectiles)
-        {
-            if (moveBullet(b, player.projectiles)){
-                stage.removeChild(player.projectiles[b]);
-                player.projectiles.splice(b,1);
-            }
-        }
-    }
-    checkWaveOver();
-    
-}
-
-
-
-
-
 /*
  * Returns true if bullet should be removed
  */
@@ -1087,6 +1072,10 @@ $(document).ready(function(){
     .add("images/death_1.png")
     .add("images/death_2.png")
     .add("images/death_3.png")
+    .add("images/btn_start_game.png")
+    .add("images/btn_leaderboard.png")
+    .add("images/btn_restart.png")
+    .add("images/logo.png")
     .on("progress", loadProgressHandler)
     .load(setup);
     
