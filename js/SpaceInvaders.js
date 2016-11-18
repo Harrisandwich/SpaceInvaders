@@ -381,11 +381,15 @@ var startGameButton = null;
 //logo 
 var logo = null;
 
-
-//loader.add("/images").load(resetGame);
+var menuMusic = null;
+var gameMusic = null; 
 
 
 function setup(){
+
+    menuMusic.once('load', function(){
+        menuMusic.play();
+    });
     logo = new PIXI.Sprite(PIXI.loader.resources["images/logo.png"].texture);
 
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien1_0.png"].texture, PIXI.loader.resources["images/alien1_1.png"].texture]});
@@ -504,7 +508,9 @@ function setGameOver()
 
 function resetGame()
 {
-
+    menuMusic.stop();
+    gameMusic.stop();
+    gameMusic.play();
     //clear stage
     for (var i = stage.children.length - 1; i >= 0; i--) {	stage.removeChild(stage.children[i]);};
     //clear enemy timer 
@@ -1054,6 +1060,24 @@ $(document).ready(function(){
     renderer = new autoDetectRenderer(screen.left, screen.bottom);
     BUNKER_PADDING = (screen.left/3);
     BUNKER_HEIGHT = screen.bottom - (screen.bottom/3);
+
+    menuMusic = new Howl({
+        src: ['./sounds/Warborg.mp3'],
+        loop: true,
+        volume: 0.5,
+        onend: function() {
+            console.log('Finished!');
+        }
+    });
+
+    gameMusic = new Howl({
+        src: ['./sounds/Mainframe.wav'],
+        loop: true,
+        volume: 0.5,
+        onend: function() {
+            console.log('Finished!');
+        }
+    });
 
     PIXI.loader
     .add("images/alien1_0.png")
