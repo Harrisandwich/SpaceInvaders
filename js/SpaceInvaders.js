@@ -377,6 +377,11 @@ var newWaveStart = false;
 var restartGameButton = null;
 var leaderboardButton = null;
 var startGameButton = null;
+var soundButton = {
+    onSprite: null,
+    offSprite:null,
+    on: true,
+}
 
 //logo 
 var logo = null;
@@ -396,33 +401,76 @@ function setup(){
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien2_0.png"].texture, PIXI.loader.resources["images/alien2_1.png"].texture]});
     enemyTextures.push({frames: [PIXI.loader.resources["images/alien3_0.png"].texture, PIXI.loader.resources["images/alien3_1.png"].texture]});
 
+    soundButton.onSprite = new PIXI.Sprite(PIXI.loader.resources["images/sound.png"].texture);
+    soundButton.offSprite = new PIXI.Sprite(PIXI.loader.resources["images/mute.png"].texture);
     restartGameButton = new PIXI.Sprite(PIXI.loader.resources["images/btn_restart.png"].texture);
     startGameButton = new PIXI.Sprite(PIXI.loader.resources["images/btn_start_game.png"].texture);
     leaderboardButton = new PIXI.Sprite(PIXI.loader.resources["images/btn_leaderboard.png"].texture);
 
-
     startGameButton.interactive = true;
     restartGameButton.interactive = true;
     leaderboardButton.interactive = true;
-
+    soundButton.onSprite.interactive = true;
+    soundButton.offSprite.interactive = true;
+    soundButton.offSprite.visible = false;
+    soundButton.offSprite.mousedown = toggleSound;
+    soundButton.onSprite.mousedown = toggleSound;
+    soundButton.offSprite.tap = toggleSound;
+    soundButton.onSprite.tap = toggleSound;
     startGameButton.tap = resetGame;
     startGameButton.mousedown = resetGame;
     //leaderboardButton.tap = showLeaderboard;
     //leaderboardButton.mousedown = showLeaderboard;
-
+    soundButton.onSprite.position.set(screen.left - soundButton.onSprite.width,0)
+    soundButton.offSprite.position.set(screen.left - soundButton.offSprite.width,0)
     logo.position.set(screen.left/2 - logo.width/2, screen.top + screen.bottom/1000);
     startGameButton.position.set(screen.left/2 - logo.width/2, logo.y + logo.height + startGameButton.height);
     leaderboardButton.position.set(screen.left/2 - logo.width/2, startGameButton.y + startGameButton.height + leaderboardButton.height);
+    stage.addChild(soundButton.onSprite);
+    stage.addChild(soundButton.offSprite);
     stage.addChild(logo);
     stage.addChild(startGameButton);
     stage.addChild(leaderboardButton);
+
+    
 
     state = mainMenu;
     gameLoop();
 }
 
 
+function toggleSound()
+{
+    if(soundButton.on)
+    {
+        soundButton.on = false;
+        soundButton.onSprite.visible = false;
+        soundButton.offSprite.visible = true;
+        if(state === play)
+        {
+            gameMusic.pause();
+        }
+        else if(state === mainMenu)
+        {
+            menuMusic.pause();
+        }
+    }
+    else
+    {
+        soundButton.on = true;
+        soundButton.onSprite.visible = true;
+        soundButton.offSprite.visible = false;
 
+        if(state === play)
+        {
+            gameMusic.play();
+        }
+        else if(state === mainMenu)
+        {
+            menuMusic.play();
+        }
+    }
+}
 
 function showScore()
 {
@@ -510,7 +558,11 @@ function resetGame()
 {
     menuMusic.stop();
     gameMusic.stop();
-    gameMusic.play();
+    if(soundButton.on)
+    {
+        gameMusic.play();
+    }
+    
     //clear stage
     for (var i = stage.children.length - 1; i >= 0; i--) {	stage.removeChild(stage.children[i]);};
     //clear enemy timer 
@@ -537,6 +589,8 @@ function resetGame()
     player = new Player();
     
     stage.addChild(player.sprite);
+    stage.addChild(soundButton.onSprite);
+    stage.addChild(soundButton.offSprite);
     player.init();
     player.sprite.x = window.innerWidth/2 - player.sprite.width/2;
     player.sprite.y = window.innerHeight - player.sprite.height * 2;
@@ -1100,6 +1154,8 @@ $(document).ready(function(){
     .add("images/btn_leaderboard.png")
     .add("images/btn_restart.png")
     .add("images/logo.png")
+    .add("images/sound.png")
+    .add("images/mute.png")
     .on("progress", loadProgressHandler)
     .load(setup);
     
