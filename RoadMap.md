@@ -25,10 +25,11 @@ Space Invaders:
 - reset game after death *completed*
 - bullet buffer indicator *complete*
 - player ship death animation *complete*
-- leader board
-- start screen
-- pause
-- music
+- leader board 
+- start screen *complete*
+- pause 
+- music *complete*
+- mute music *complete*
 
 
 
